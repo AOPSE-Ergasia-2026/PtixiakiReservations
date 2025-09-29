@@ -1,6 +1,6 @@
 ﻿services:
   ptixiakireservations:
-    image: ptixiakireservations
+    image: ptixiakireservations:latest
     build:
       context: .
       dockerfile: PtixiakiReservations/Dockerfile
