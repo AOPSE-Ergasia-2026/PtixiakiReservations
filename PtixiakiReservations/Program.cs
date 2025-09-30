@@ -20,6 +20,9 @@ using Serilog.Sinks.Elasticsearch;
 using System;
 using Microsoft.AspNetCore.Authorization;
 
+// Configure Npgsql to handle DateTime as timestamp without time zone
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog with Elasticsearch
@@ -151,12 +154,15 @@ try
 
         try
         {
+            // For switching between database providers, use EnsureCreated instead of migrations
+            Log.Information("Ensuring database is created...");
+            await context.Database.EnsureCreatedAsync();
+            Log.Information("Database created successfully");
+
             Log.Information("Seeding database...");
 
-            await DataSeeder.SeedTestDataAsync(context, userManager, roleManager, services);
-
-            // Seed test users for role testing
-            await TestUserSeeder.SeedTestUsersAsync(userManager, roleManager);
+            // Only use BasicDataSeed for minimal, essential data
+            DataSeeder.BasicDataSeed(context, userManager, roleManager);
 
             Log.Information("Database seeded successfully");
         }

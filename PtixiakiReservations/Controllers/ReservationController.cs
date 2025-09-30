@@ -130,10 +130,14 @@ public class ReservationController(
         int[] seatIds = new int[numOfSeats * 2];
 
         DateTime NowDateTime = DateTime.Now;
+
+        // First filter reservations by the specific date and event
         var reservations = _context.Reservation.Include(r => r.Event).Include(r => r.Seat)
             .Include(r => r.Seat.SubArea.Venue)
-            .Where(r => r.Seat.SubArea.Id == subArea.Id && r.EventId == EventId).ToList();
-    
+            .Where(r => r.Seat.SubArea.Id == subArea.Id && r.EventId == EventId)
+            .Where(r => r.Date.Date == ResDate.Date) // Filter by specific date for multi-day events
+            .ToList();
+
         int i = 0;
         if (NowDateTime.Date == ResDate.Date)
         {
@@ -144,12 +148,12 @@ public class ReservationController(
                 seatIds[i++] = s.Id;
             }
         }
-    
-        // Fixed overlap detection logic
+
+        // Check for time overlap on the same date
         reservations = reservations
-            .Where(res => 
+            .Where(res =>
                 // Check for time overlap: Two time periods overlap if one starts before the other ends
-                ResDate < res.Date.Add(res.Duration) && 
+                ResDate < res.Date.Add(res.Duration) &&
                 ResDate.Add(Duration) > res.Date
             ).ToList();
 
@@ -214,26 +218,12 @@ public class ReservationController(
                 return BadRequest("Cannot make reservations with a past date");
             }
 
-           // Ensure the ResDate uses the event's date but preserves the time from the reservation
-            model.ResDate = CombineDateWithTime(eventToReserve.StartDateTime, model.ResDate);
+            // For multi-day events, the system creates separate Event records for each day
+            // So we should allow the ResDate to be used as-is from the frontend
+            // Only validate that it's within reasonable bounds of the event
 
-            static DateTime CombineDateWithTime(DateTime dateSource, DateTime timeSource)
-            {
-                return new DateTime(
-                    dateSource.Year,
-                    dateSource.Month,
-                    dateSource.Day,
-                    timeSource.Hour,
-                    timeSource.Minute,
-                    timeSource.Second,
-                    dateSource.Kind);
-            }
-
-            // Additional validation: Check if trying to reserve for a different date than the event
-            if (model.ResDate.Date != eventToReserve.StartDateTime.Date)
-            {
-                return BadRequest($"Reservations must be made for the event date: {eventToReserve.StartDateTime.Date:yyyy-MM-dd}");
-            }
+            // The ResDate should already contain the correct date and time from the frontend
+            // No need to override it unless there's a specific issue
 
             // Continue with the existing logic to make the reservation
             var userId = _userManager.GetUserId(HttpContext.User);

@@ -10,7 +10,6 @@ services:
     - "dotnet"
     - "/app/bin/Debug/net9.0/PtixiakiReservations.dll"
     environment:
-      ASPNETCORE_ENVIRONMENT: "Development"
       ASPNETCORE_STATICWEBASSETS: "/app/bin/Debug/net9.0/PtixiakiReservations.staticwebassets.runtime.CT.json"
       DOTNET_USE_POLLING_FILE_WATCHER: "true"
     image: "ptixiakireservations:dev"

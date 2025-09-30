@@ -47,7 +47,7 @@ namespace PtixiakiReservations.Controllers
             return View(venues2);
         }
 
-        [Authorize(Roles = "Venue")]
+        [Authorize(Roles = "Admin,Venue")]
         public async Task<IActionResult> MyVenues()
         {
             string userId = _userManager.GetUserId(HttpContext.User);

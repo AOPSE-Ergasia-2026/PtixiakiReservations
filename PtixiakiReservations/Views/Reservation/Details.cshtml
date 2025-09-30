@@ -4,79 +4,210 @@
     ViewData["Title"] = "Reservation Details";
 }
 
-<div class="container mx-auto p-6">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Reservation Details</h1>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+    <div class="container mx-auto px-4 max-w-5xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <nav class="text-sm mb-4">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="@Url.Action("Index", "Home")" class="inline-flex items-center text-gray-700 hover:text-indigo-600">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                            </svg>
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <a href="@Url.Action("Index", "Reservation")" class="ml-1 text-gray-700 hover:text-indigo-600 md:ml-2">Reservations</a>
+                        </div>
+                    </li>
+                    <li aria-current="page">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="ml-1 text-gray-500 md:ml-2">Details</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
 
-    <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
-        <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-            <h4 class="text-xl font-semibold text-gray-700">Reservation Information</h4>
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
+                Reservation Details
+            </h1>
+            <p class="text-gray-600 mt-2">Booking Reference: #@Model.ID.ToString("D6")</p>
         </div>
 
-        <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- User Info Section -->
-                <div class="col-span-1 md:col-span-3 bg-blue-50 rounded-lg p-4">
-                    <h5 class="font-medium text-blue-700 mb-3">Customer Information</h5>
-                    <div class="flex items-center space-x-2">
-                        <span class="font-medium text-gray-700">Name:</span>
-                        <a href="@Url.Action("Details", "ApplicationUser", new { id = Model.ApplicationUser.Id })"
-                           class="text-blue-600 hover:text-blue-800 hover:underline">
-                            @Model.ApplicationUser.FirstName @Model.ApplicationUser.LastName
-                        </a>
+        <!-- Main Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Status Bar -->
+            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold">@Model.Event.Name</h2>
+                        <p class="text-indigo-100 mt-1">Reserved on @Model.Date.ToString("MMMM dd, yyyy")</p>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                        <span class="text-sm font-medium">Status</span>
+                        <p class="text-lg font-bold">Confirmed</p>
                     </div>
                 </div>
+            </div>
 
-                <!-- Event Info Section -->
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h5 class="font-medium text-gray-700 mb-3">Event Details</h5>
-                    <div class="space-y-2">
-                        <div>
-                            <span class="font-medium text-gray-700">Event:</span>
-                            <span class="text-gray-800">@Model.Event.Name</span>
+            <div class="p-8">
+                <!-- Customer Information -->
+                <div class="mb-8 pb-8 border-b border-gray-200">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-indigo-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
                         </div>
-                        <div>
-                            <span class="font-medium text-gray-700">Date:</span>
-                            <span class="text-gray-800">@Model.Date.ToString("MMM dd, yyyy - h:mm tt")</span>
-                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 ml-3">Customer Information</h3>
                     </div>
-                </div>
-
-                <!-- Venue Info Section -->
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h5 class="font-medium text-gray-700 mb-3">Venue Details</h5>
-                    <div class="space-y-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <span class="font-medium text-gray-700">Venue:</span>
-                            <a href="@Url.Action("Details", "Venue", new { id = Model.Seat.SubArea.Venue.Id })"
-                               class="text-blue-600 hover:text-blue-800 hover:underline">
-                                @Model.Seat.SubArea.Venue.Name
+                            <p class="text-sm text-gray-500 mb-1">Full Name</p>
+                            <a href="@Url.Action("Details", "ApplicationUser", new { id = Model.ApplicationUser.Id })"
+                               class="text-lg font-medium text-indigo-600 hover:text-indigo-700 hover:underline">
+                                @Model.ApplicationUser.FirstName @Model.ApplicationUser.LastName
                             </a>
                         </div>
                         <div>
-                            <span class="font-medium text-gray-700">Area:</span>
-                            <span class="text-gray-800">@Model.Seat.SubArea.AreaName</span>
+                            <p class="text-sm text-gray-500 mb-1">Email</p>
+                            <p class="text-lg text-gray-800">@Model.ApplicationUser.Email</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Seat Info Section -->
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h5 class="font-medium text-gray-700 mb-3">Seat Information</h5>
-                    <div class="space-y-2">
-                        <div>
-                            <span class="font-medium text-gray-700">Seat:</span>
-                            <span class="text-gray-800">@Model.Seat.Name</span>
+                <!-- Event Details -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Event Card -->
+                    <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-purple-200 p-2 rounded-lg">
+                                <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-800 ml-3">Event Details</h4>
                         </div>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider">Event Name</p>
+                                <p class="text-gray-800 font-medium">@Model.Event.Name</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider">Date & Time</p>
+                                <p class="text-gray-800 font-medium">@Model.Date.ToString("dddd, MMM dd")</p>
+                                <p class="text-gray-600 text-sm">@Model.Date.ToString("h:mm tt")</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider">Duration</p>
+                                <p class="text-gray-800 font-medium">@Model.Duration.TotalHours hours</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Venue Card -->
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-blue-200 p-2 rounded-lg">
+                                <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-800 ml-3">Venue Details</h4>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider">Venue Name</p>
+                                <a href="@Url.Action("Details", "Venue", new { id = Model.Seat.SubArea.Venue.Id })"
+                                   class="text-blue-600 hover:text-blue-700 hover:underline font-medium">
+                                    @Model.Seat.SubArea.Venue.Name
+                                </a>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider">Location</p>
+                                <p class="text-gray-800 font-medium">@Model.Seat.SubArea.Venue.Address</p>
+                                @if (Model.Seat.SubArea.Venue.City != null)
+                                {
+                                    <p class="text-gray-600 text-sm">@Model.Seat.SubArea.Venue.City.Name</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seat Card -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-green-200 p-2 rounded-lg">
+                                <svg class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-800 ml-3">Seat Information</h4>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider">Section</p>
+                                <p class="text-gray-800 font-medium">@Model.Seat.SubArea.AreaName</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider">Seat Number</p>
+                                <div class="inline-flex items-center">
+                                    <span class="bg-green-100 text-green-800 text-lg font-bold px-3 py-1 rounded-lg">
+                                        @Model.Seat.Name
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Code Placeholder -->
+                <div class="mt-8 pt-8 border-t border-gray-200">
+                    <div class="text-center">
+                        <div class="inline-block bg-gray-100 p-8 rounded-xl">
+                            <svg class="w-32 h-32 text-gray-400 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zM12 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V4zM10 5a1 1 0 00-1 1v2a1 1 0 001 1h2a1 1 0 001-1V6a1 1 0 00-1-1h-2zM9 13a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2zM13 14a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 00-1-1h-2a1 1 0 00-1 1v2z"></path>
+                            </svg>
+                            <p class="text-gray-600 mt-2 text-sm">QR Code for Entry</p>
+                        </div>
+                        <p class="text-gray-500 text-sm mt-4">Present this code at the venue entrance</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="flex space-x-4">
-        <a href="@Url.Action("Index", "Home")"
-           class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-700 transition-colors">
-            Back to Home
-        </a>
+        <!-- Action Buttons -->
+        <div class="mt-8 flex flex-wrap gap-4 justify-center">
+            <a href="@Url.Action("Index", "Reservation")"
+               class="inline-flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Reservations
+            </a>
+            <button onclick="window.print()"
+                    class="inline-flex items-center px-6 py-3 bg-indigo-600 rounded-lg text-white hover:bg-indigo-700 transition-colors shadow-sm">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Print Ticket
+            </button>
+            <button class="inline-flex items-center px-6 py-3 bg-green-600 rounded-lg text-white hover:bg-green-700 transition-colors shadow-sm">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Download PDF
+            </button>
+        </div>
     </div>
 </div>

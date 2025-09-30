@@ -201,25 +201,37 @@ public class EventGeneratorService : IEventGeneratorService
     {
         var seats = new List<Seat>();
         var seatCount = _random.Next(minSeats, maxSeats + 1);
-        
+
         // Calculate rows and seats per row for a realistic layout
         var rowCount = (int)Math.Ceiling(Math.Sqrt(seatCount));
         var seatsPerRow = (int)Math.Ceiling((double)seatCount / rowCount);
-        
+
+        // Define proper spacing between seats
+        var seatWidth = 30m; // Width of each seat in pixels
+        var seatHeight = 30m; // Height of each seat in pixels
+        var horizontalSpacing = 40m; // Space between seats horizontally
+        var verticalSpacing = 45m; // Space between rows vertically
+
+        // Calculate starting positions to center the seating layout
+        var totalWidth = (seatsPerRow * seatWidth) + ((seatsPerRow - 1) * horizontalSpacing);
+        var totalHeight = (rowCount * seatHeight) + ((rowCount - 1) * verticalSpacing);
+        var startX = Math.Max(20m, (subArea.Width - totalWidth) / 2);
+        var startY = Math.Max(20m, (subArea.Height - totalHeight) / 2);
+
         var seatCounter = 0;
-        for (int row = 1; row <= rowCount && seatCounter < seatCount; row++)
+        for (int row = 0; row < rowCount && seatCounter < seatCount; row++)
         {
-            for (int seatNum = 1; seatNum <= seatsPerRow && seatCounter < seatCount; seatNum++)
+            for (int col = 0; col < seatsPerRow && seatCounter < seatCount; col++)
             {
                 var seat = new Seat
                 {
-                    Name = $"{(char)('A' + row - 1)}{seatNum:D2}",
-                    X = (decimal)(seatNum * (subArea.Width / seatsPerRow)),
-                    Y = (decimal)(row * (subArea.Height / rowCount)),
+                    Name = $"{(char)('A' + row)}{col + 1:D2}",
+                    X = startX + (col * (seatWidth + horizontalSpacing)),
+                    Y = startY + (row * (seatHeight + verticalSpacing)),
                     Available = _random.NextDouble() > 0.1, // 90% available, 10% unavailable
                     SubAreaId = subArea.Id
                 };
-                
+
                 seats.Add(seat);
                 seatCounter++;
             }

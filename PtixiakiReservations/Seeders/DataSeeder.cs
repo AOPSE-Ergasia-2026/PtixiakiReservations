@@ -29,33 +29,47 @@ public class DataSeeder
             SeedUsers(userManager, roleManager).Wait();
         }
 
+        if (!context.City.Any())
+        {
+            SeedCities(context);
+            context.SaveChanges();
+        }
+
+        if (!context.EventType.Any())
+        {
+            SeedEventTypes(context);
+            context.SaveChanges();
+        }
+
         if (!context.Venue.Any())
         {
             SeedVenues(context);
+            context.SaveChanges();
         }
 
         if (!context.SubArea.Any())
         {
             SeedSubAreas(context);
+            context.SaveChanges();
         }
 
         if (!context.Event.Any())
         {
             SeedEvents(context);
+            context.SaveChanges();
         }
 
         if (!context.Seat.Any())
         {
             SeedSeats(context);
+            context.SaveChanges();
         }
-
-        context.SaveChanges();
     }
 
     private static async Task SeedUsers(UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager)
     {
-        string[] roleNames = { "Admin", "User", "Manager" };
+        string[] roleNames = { "Admin", "User", "Manager", "Venue" };
         foreach (var roleName in roleNames)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
@@ -68,16 +82,16 @@ public class DataSeeder
         {
             new ApplicationUser
             {
-                UserName = "admin@example.com", Email = "admin@example.com", FirstName = "Admin", LastName = "User"
-            },
-            new ApplicationUser
-            {
-                UserName = "user1@example.com", Email = "user1@example.com", FirstName = "First", LastName = "User"
+                UserName = "admin@admin", Email = "admin@admin", FirstName = "Admin", LastName = "User"
             },
             new ApplicationUser
             {
                 UserName = "manager@example.com", Email = "manager@example.com", FirstName = "Manager",
                 LastName = "User"
+            },
+            new ApplicationUser
+            {
+                UserName = "user@example.com", Email = "user@example.com", FirstName = "Normal", LastName = "User"
             },
         };
 
@@ -86,7 +100,9 @@ public class DataSeeder
             var existingUser = await userManager.FindByEmailAsync(user.Email);
             if (existingUser == null)
             {
-                await userManager.CreateAsync(user, "Pass123"); // Change password here as required
+                // Use different password for admin@admin
+                var password = user.Email == "admin@admin" ? "admin123" : "Pass123";
+                await userManager.CreateAsync(user, password);
 
                 // Assign roles as an example
                 if (user.Email.StartsWith("admin"))
@@ -99,19 +115,46 @@ public class DataSeeder
         }
     }
 
+    private static void SeedCities(ApplicationDbContext context)
+    {
+        context.City.AddRange(new List<City>
+        {
+            new City { Name = "Athens" },
+            new City { Name = "Thessaloniki" },
+            new City { Name = "Patras" },
+            new City { Name = "Heraklion" },
+            new City { Name = "Larissa" }
+        });
+    }
+
+    private static void SeedEventTypes(ApplicationDbContext context)
+    {
+        context.EventType.AddRange(new List<EventType>
+        {
+            new EventType { Name = "Concert" },
+            new EventType { Name = "Theater" },
+            new EventType { Name = "Exhibition" },
+            new EventType { Name = "Sports" },
+            new EventType { Name = "Conference" }
+        });
+    }
+
     private static void SeedVenues(ApplicationDbContext context)
     {
+        var firstCity = context.City.First();
+        var firstUser = context.Users.First();
+
         context.Venue.AddRange(new List<Venue>
         {
             new Venue
             {
-                Name = "Concert Hall", Address = "123 Main St", CityId = 1, PostalCode = "12345",
-                Phone = "1234567890", UserId = context.Users.First().Id, imgUrl = "/images/venue1.jpg"
+                Name = "Concert Hall", Address = "123 Main St", CityId = firstCity.Id, PostalCode = "12345",
+                Phone = "1234567890", UserId = firstUser.Id, imgUrl = "/images/venue1.jpg"
             },
             new Venue
             {
-                Name = "Exhibition Center", Address = "456 Market St", CityId = 1, PostalCode = "67890",
-                Phone = "0987654321", UserId = context.Users.First().Id, imgUrl = "/images/venue2.jpg"
+                Name = "Exhibition Center", Address = "456 Market St", CityId = firstCity.Id, PostalCode = "67890",
+                Phone = "0987654321", UserId = firstUser.Id, imgUrl = "/images/venue2.jpg"
             },
         });
     }
@@ -155,6 +198,11 @@ public class DataSeeder
     {
         var venues = context.Venue.ToList();
         var types = context.EventType.ToList();
+        var subAreas = context.SubArea.ToList();
+
+        // Get subareas for each venue
+        var firstVenueSubArea = subAreas.FirstOrDefault(sa => sa.VenueId == venues.First().Id);
+        var lastVenueSubArea = subAreas.FirstOrDefault(sa => sa.VenueId == venues.Last().Id);
 
         context.Event.AddRange(new List<Event>
         {
@@ -164,7 +212,8 @@ public class DataSeeder
                 StartDateTime = DateTime.Now.AddMonths(1),
                 EndTime = DateTime.Now.AddMonths(1).AddHours(4),
                 EventTypeId = types.First().Id,
-                VenueId = venues.First().Id
+                VenueId = venues.First().Id,
+                SubAreaId = firstVenueSubArea?.Id
             },
             new Event
             {
@@ -172,7 +221,8 @@ public class DataSeeder
                 StartDateTime = DateTime.Now.AddMonths(2),
                 EndTime = DateTime.Now.AddMonths(2).AddHours(5),
                 EventTypeId = types.Last().Id,
-                VenueId = venues.Last().Id
+                VenueId = venues.Last().Id,
+                SubAreaId = lastVenueSubArea?.Id
             }
         });
     }
@@ -184,15 +234,21 @@ public class DataSeeder
 
         foreach (var area in subAreas)
         {
-            for (int row = 1; row <= 5; row++)
+            // Define proper spacing between seats
+            var seatSpacingX = 70m; // Horizontal spacing between seats
+            var seatSpacingY = 75m; // Vertical spacing between rows
+            var startX = 30m; // Starting X position
+            var startY = 30m; // Starting Y position
+
+            for (int row = 0; row < 5; row++)
             {
-                for (int col = 1; col <= 10; col++)
+                for (int col = 0; col < 10; col++)
                 {
                     seats.Add(new Seat
                     {
-                        Name = "Seeded seat",
-                        Y = col,
-                        X = row,
+                        Name = $"{(char)('A' + row)}{col + 1:D2}",
+                        X = startX + (col * seatSpacingX),
+                        Y = startY + (row * seatSpacingY),
                         SubAreaId = area.Id,
                         Available = true,
                     });
