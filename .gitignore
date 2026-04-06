@@ -109,3 +109,5 @@ docker-compose.override.yml
 # -------------------------
 # Ensure git ignores are tracked
 !.gitignore
+PtixiakiReservations/appsettings.json
+PtixiakiReservations/appsettings.Development.json
