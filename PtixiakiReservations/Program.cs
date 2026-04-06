@@ -25,6 +25,17 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
+// EF MODE: Only load DbContext for migrations
+if (builder.Environment.IsEnvironment("EF"))
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+    var efApp = builder.Build();
+    return 0;
+}
+
+
 // Configure Serilog with Elasticsearch
 var elasticUrl = builder.Configuration["ElasticSettings:Url"] ?? "http://elasticsearch:9200";
 var indexPrefix = builder.Configuration["ElasticSettings:DefaultIndex"] ?? "events";
@@ -63,29 +74,15 @@ try
 {
     Log.Information("Starting web application");
 
-    // Configure services with database fallback
+    
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
-        var sqlServerConnection = builder.Configuration.GetConnectionString("DefaultConnection");
-        var postgresConnection = builder.Configuration.GetConnectionString("PostgresConnection") ?? 
-                                "Host=postgres;Database=ReservationProject;Username=postgres;Password=Blaze2310";
-        
-        try
-        {
-            // Try to test SQL Server connection
-            using var testConnection = new Microsoft.Data.SqlClient.SqlConnection(sqlServerConnection);
-            testConnection.Open();
-            testConnection.Close();
-            
-            Log.Information("Using SQL Server database");
-            options.UseSqlServer(sqlServerConnection);
-        }
-        catch (Exception ex)
-        {
-            Log.Warning("SQL Server connection failed: {Error}. Falling back to PostgreSQL", ex.Message);
-            options.UseNpgsql(postgresConnection);
-        }
+        var postgresConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        Log.Information("Using PostgreSQL database");
+        options.UseNpgsql(postgresConnection);
     });
+
 
     builder.Services.AddSignalR();
 
@@ -145,6 +142,10 @@ try
     var app = builder.Build();
 
     // Configure the HTTP Request Pipeline
+
+// ΜΗΝ τρέχεις seeding όταν τρέχει EF Core CLI
+if (!builder.Environment.IsEnvironment("EF"))
+{
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
@@ -154,16 +155,12 @@ try
 
         try
         {
-            // For switching between database providers, use EnsureCreated instead of migrations
             Log.Information("Ensuring database is created...");
             await context.Database.EnsureCreatedAsync();
             Log.Information("Database created successfully");
 
             Log.Information("Seeding database...");
-
-            // Only use BasicDataSeed for minimal, essential data
             DataSeeder.BasicDataSeed(context, userManager, roleManager);
-
             Log.Information("Database seeded successfully");
         }
         catch (Exception ex)
@@ -171,6 +168,7 @@ try
             Log.Error(ex, "An error occurred while seeding the database");
         }
     }
+}
 
     // Use forwarded headers - this must come first in the pipeline
     app.UseForwardedHeaders();
