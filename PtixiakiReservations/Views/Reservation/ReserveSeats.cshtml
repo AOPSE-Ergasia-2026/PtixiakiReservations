@@ -142,6 +142,11 @@
                                 Stage
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                                <div id="ZoomContainer">
+                                    <button type="button" onclick="ZoomIn()" class=" bg-green-500 text-white px-4 py-1 mb-5 rounded-full text-sm font-medium z-10">+</button>
+                                    <button type="button" onclick="ZoomOut()" class=" bg-red-500 text-white px-4 py-1 mb-5 rounded-full text-sm font-medium z-10">-</button>
+                                    <button type="button" onclick="ResetZoom()" class=" bg-blue-500 text-white px-4 py-1 mb-5 rounded-full text-sm font-medium z-10">Reset</button>
+                                </div>
                                 <canvas id="seatCanvas" width="600" height="400" class="rounded-md shadow-inner"></canvas>
                             </div>
                         </div>
@@ -220,6 +225,31 @@
         let selectedSeats = [];
         let seatNames = {};
         let fabricCanvas;
+
+        function ZoomIn(){
+            if(!fabricCanvas) return;
+
+            let zoom = fabricCanvas.getZoom();
+            zoom*=1.1;
+            if(zoom>5) zoom=5;
+            fabricCanvas.zoomToPoint({x:fabricCanvas.width/2, y:fabricCanvas.height/2},zoom);
+        }
+
+        function ZoomOut(){
+            if(!fabricCanvas) return;
+
+            let zoom = fabricCanvas.getZoom();
+            zoom/=1.1;
+            if(zoom<0.1) zoom=0.1;
+            fabricCanvas.zoomToPoint({x:fabricCanvas.width/2, y:fabricCanvas.height/2},zoom);
+        }
+
+        function ResetZoom(){
+            if(!fabricCanvas) return;
+            fabricCanvas.setZoom(1);
+            fabricCanvas.viewportTransform=[1,0,0,1,0,0];
+            fabricCanvas.requestRenderAll();
+        }
 
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize Fabric.js canvas

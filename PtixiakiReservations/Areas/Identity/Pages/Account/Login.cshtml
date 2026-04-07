@@ -43,13 +43,13 @@
 
                     <div class="form-group text-sm mt-4">
                         <p>
-                            <a id="forgot-password" asp-page="./ForgotPassword" class="text-blue-600 hover:underline">
-                                Forgot your password?
+                            <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-blue-600 hover:underline">
+                                Register as a new user
                             </a>
                         </p>
                         <p>
-                            <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-blue-600 hover:underline">
-                                Register as a new user
+                            <a id="forgot-password" asp-page="./ForgotPassword" class="text-blue-600 hover:underline">
+                                Forgot your password?
                             </a>
                         </p>
                         <p>
