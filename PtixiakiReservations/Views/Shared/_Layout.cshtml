@@ -59,15 +59,6 @@
                             Home
                         </a>
 
-                        <!-- Reservations link - visible to all logged-in users -->
-                        @if (SignInManager.IsSignedIn(User))
-                        {
-                            <a href="@Url.Action("Index", "Reservation")"
-                               class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                                Reservations
-                            </a>
-                        }
-
                         <!-- Venue manager links - only visible to venue managers -->
                         @if (isVenueManager || isAdmin)
                         {
