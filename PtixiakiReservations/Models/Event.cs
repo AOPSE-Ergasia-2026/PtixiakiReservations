@@ -17,4 +17,5 @@ public class Event
     [ForeignKey("SubAreaId")] public SubArea SubArea { get; set; }
     public int? FamilyEventId { get; set; }
     [ForeignKey("FamilyEventId")] public FamilyEvent FamilyEvent { get; set; }
+    public string? ImagePath { get; set; }
 }

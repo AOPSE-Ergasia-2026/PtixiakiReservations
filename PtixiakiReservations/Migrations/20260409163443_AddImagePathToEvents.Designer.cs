@@ -12,8 +12,8 @@ using PtixiakiReservations.Data;
 namespace PtixiakiReservations.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260403104410_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260409163443_AddImagePathToEvents")]
+    partial class AddImagePathToEvents
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -276,6 +276,33 @@ namespace PtixiakiReservations.Migrations
                     b.ToTable("City");
                 });
 
+            modelBuilder.Entity("PtixiakiReservations.Models.Date", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Day")
+                        .HasColumnType("integer");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("Date");
+                });
+
             modelBuilder.Entity("PtixiakiReservations.Models.Event", b =>
                 {
                     b.Property<int>("Id")
@@ -292,6 +319,9 @@ namespace PtixiakiReservations.Migrations
 
                     b.Property<int?>("FamilyEventId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ImagePath")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .HasColumnType("text");
@@ -557,6 +587,17 @@ namespace PtixiakiReservations.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("City");
+                });
+
+            modelBuilder.Entity("PtixiakiReservations.Models.Date", b =>
+                {
+                    b.HasOne("PtixiakiReservations.Models.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
                 });
 
             modelBuilder.Entity("PtixiakiReservations.Models.Event", b =>

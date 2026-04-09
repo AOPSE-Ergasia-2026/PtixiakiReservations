@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -14,6 +15,8 @@ using PtixiakiReservations.Models;
 using PtixiakiReservations.Models.ViewModels;
 using PtixiakiReservations.Services;
 using System.Text;
+using Microsoft.AspNetCore.Hosting; 
+using Microsoft.AspNetCore.Http;    
 
 namespace PtixiakiReservations.Controllers;
 
@@ -22,7 +25,8 @@ public class EventsController(
     UserManager<ApplicationUser> userManager,
     RoleManager<ApplicationRole> roleManager,
     IElasticSearch elasticSearchService,
-    ILogger<EventsController> logger)
+    ILogger<EventsController> logger,
+    IWebHostEnvironment environment)
     : Controller
 {
     // GET: Events
@@ -356,6 +360,7 @@ public class EventsController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateEvent(
         Event newEvent,
+        IFormFile? imageFile,
         string IsMultiDay = null,
         string StartDate = null,
         string EndDate = null,
@@ -363,97 +368,72 @@ public class EventsController(
         string EndTime = null)
     {
         bool isMultiDay = IsMultiDay == "on" || IsMultiDay == "true";
-        
+        var userId = userManager.GetUserId(User);
+
+        // 1. Handle Image Upload First
+        if (imageFile != null && imageFile.Length > 0)
+        {
+            try
+            {
+                // Define path: wwwroot/uploads/events
+                string uploadsFolder = Path.Combine(environment.WebRootPath, "images/events");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                // Generate unique filename to prevent collisions
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(imageFile.FileName);
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imageFile.CopyToAsync(fileStream);
+                }
+
+                // Set the relative path on the model
+                newEvent.ImagePath = "/images/events/" + uniqueFileName;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error saving event image to disk.");
+                ModelState.AddModelError("", "There was an error saving the image file.");
+            }
+        }
+
         try
         {
             logger.LogInformation("Processing event creation. isMultiDay: {isMultiDay}", isMultiDay);
-            var userId = userManager.GetUserId(User);
 
-            // For debugging
-            logger.LogInformation("Received event data: Name={Name}, VenueId={VenueId}, EventTypeId={EventTypeId}",
-                newEvent.Name, newEvent.VenueId, newEvent.EventTypeId);
-
-            // Check model state
+            // 2. Validate Model State
             if (!ModelState.IsValid)
             {
-                logger.LogWarning("Model state is invalid. Errors: {Errors}",
-                    string.Join(", ", ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage)));
-
-                // Reload the dropdowns for the form
-                var venues = await context.Venue
-                    .Where(v => v.UserId == userId)
-                    .Select(v => new SelectListItem
-                    {
-                        Value = v.Id.ToString(),
-                        Text = v.Name
-                    }).ToListAsync();
-
-                ViewBag.VenueList = venues;
-                ViewBag.EventTypeList = new SelectList(await context.EventType.ToListAsync(), "Id", "Name");
-
+                logger.LogWarning("Model state is invalid.");
+                await ReloadCreateDropdowns(userId);
                 return View(newEvent);
             }
 
-            // Verify venue belongs to the current user
+            // 3. Verify venue belongs to the current user
             var venue = await context.Venue.FirstOrDefaultAsync(v => v.Id == newEvent.VenueId && v.UserId == userId);
             if (venue == null)
             {
-                logger.LogWarning("User {UserId} attempted to create event for venue {VenueId} they don't own", userId,
-                    newEvent.VenueId);
+                logger.LogWarning("User {UserId} unauthorized for venue {VenueId}", userId, newEvent.VenueId);
                 ModelState.AddModelError("VenueId", "You can only create events for venues you own.");
-
-                // Reload the dropdowns for the form
-                ViewBag.VenueList = await context.Venue
-                    .Where(v => v.UserId == userId)
-                    .Select(v => new SelectListItem
-                    {
-                        Value = v.Id.ToString(),
-                        Text = v.Name
-                    }).ToListAsync();
-
-                ViewBag.EventTypeList = new SelectList(await context.EventType.ToListAsync(), "Id", "Name");
-
+                await ReloadCreateDropdowns(userId);
                 return View(newEvent);
             }
 
+            // 4. Handle Save Logic
             if (isMultiDay && !string.IsNullOrEmpty(StartDate) && !string.IsNullOrEmpty(EndDate)
                 && !string.IsNullOrEmpty(StartTime) && !string.IsNullOrEmpty(EndTime))
             {
-                // Handle multi-day event creation
                 logger.LogInformation("Creating multi-day events from {StartDate} to {EndDate}", StartDate, EndDate);
 
                 DateTime startDate = DateTime.Parse(StartDate);
                 DateTime endDate = DateTime.Parse(EndDate);
                 
-                // Handle time parsing - extract time portion if it's a datetime string
-                TimeSpan startTimeSpan;
-                TimeSpan endTimeSpan;
-                
-                if (DateTime.TryParse(StartTime, out DateTime parsedStartTime))
-                {
-                    // If it parses as DateTime, extract the time portion
-                    startTimeSpan = parsedStartTime.TimeOfDay;
-                }
-                else
-                {
-                    // Otherwise parse as TimeSpan directly
-                    startTimeSpan = TimeSpan.Parse(StartTime);
-                }
-                
-                if (DateTime.TryParse(EndTime, out DateTime parsedEndTime))
-                {
-                    // If it parses as DateTime, extract the time portion
-                    endTimeSpan = parsedEndTime.TimeOfDay;
-                }
-                else
-                {
-                    // Otherwise parse as TimeSpan directly
-                    endTimeSpan = TimeSpan.Parse(EndTime);
-                }
+                // Extract Time portion
+                TimeSpan startTimeSpan = DateTime.TryParse(StartTime, out DateTime pst) ? pst.TimeOfDay : TimeSpan.Parse(StartTime);
+                TimeSpan endTimeSpan = DateTime.TryParse(EndTime, out DateTime pet) ? pet.TimeOfDay : TimeSpan.Parse(EndTime);
 
-                // Create events for each day in the range
+                // Loop through each day
                 for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
                 {
                     var eventForDay = new Event
@@ -461,60 +441,53 @@ public class EventsController(
                         Name = newEvent.Name,
                         VenueId = newEvent.VenueId,
                         EventTypeId = newEvent.EventTypeId,
-                        SubAreaId = newEvent.SubAreaId,  // Include SubAreaId for multi-day events
+                        SubAreaId = newEvent.SubAreaId,
                         StartDateTime = date.Add(startTimeSpan),
-                        EndTime = date.Add(endTimeSpan)
+                        EndTime = date.Add(endTimeSpan),
+                        // CRITICAL FIX: Assign the ImagePath to every daily instance
+                        ImagePath = newEvent.ImagePath 
                     };
 
                     context.Add(eventForDay);
                 }
-
-                await context.SaveChangesAsync();
-
-                return RedirectToAction("Index");
             }
             else
             {
-                // Handle single event creation
+                // Single event creation
                 logger.LogInformation("Creating single event on {Date}", newEvent.StartDateTime);
 
-                // Make sure StartDateTime and EndTime are properly set
                 if (newEvent.StartDateTime == DateTime.MinValue)
-                {
                     newEvent.StartDateTime = DateTime.Now;
-                }
 
                 if (newEvent.EndTime == DateTime.MinValue)
-                {
                     newEvent.EndTime = newEvent.StartDateTime.AddHours(2);
-                }
 
+                // newEvent already has the ImagePath set from the upload block above
                 context.Add(newEvent);
-                await context.SaveChangesAsync();
-
-                return RedirectToAction("Index");
             }
+
+            await context.SaveChangesAsync();
+            return RedirectToAction("Index");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating event");
-
-            // Reload the dropdowns for the form
-            var userId = userManager.GetUserId(User);
-            ViewBag.VenueList = await context.Venue
-                .Where(v => v.UserId == userId)
-                .Select(v => new SelectListItem
-                {
-                    Value = v.Id.ToString(),
-                    Text = v.Name
-                }).ToListAsync();
-
-            ViewBag.EventTypeList = new SelectList(await context.EventType.ToListAsync(), "Id", "Name");
-
+            await ReloadCreateDropdowns(userId);
             ModelState.AddModelError("", "An error occurred while creating the event. Please try again.");
             return View(newEvent);
         }
     }
+
+// Private helper to keep the Create function clean
+private async Task ReloadCreateDropdowns(string userId)
+{
+    ViewBag.VenueList = await context.Venue
+        .Where(v => v.UserId == userId)
+        .Select(v => new SelectListItem { Value = v.Id.ToString(), Text = v.Name })
+        .ToListAsync();
+
+    ViewBag.EventTypeList = new SelectList(await context.EventType.ToListAsync(), "Id", "Name");
+}
 
     [Authorize]
     public bool CorrectDay(JsonEventModel ev, int i, int everyNum)

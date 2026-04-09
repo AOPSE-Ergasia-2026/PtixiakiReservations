@@ -317,6 +317,9 @@ namespace PtixiakiReservations.Migrations
                     b.Property<int?>("FamilyEventId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ImagePath")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .HasColumnType("text");
 

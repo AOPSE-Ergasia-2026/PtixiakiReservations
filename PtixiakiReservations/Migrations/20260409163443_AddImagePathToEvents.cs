@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace PtixiakiReservations.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddImagePathToEvents : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -282,7 +282,8 @@ namespace PtixiakiReservations.Migrations
                     EventTypeId = table.Column<int>(type: "integer", nullable: false),
                     VenueId = table.Column<int>(type: "integer", nullable: false),
                     SubAreaId = table.Column<int>(type: "integer", nullable: true),
-                    FamilyEventId = table.Column<int>(type: "integer", nullable: true)
+                    FamilyEventId = table.Column<int>(type: "integer", nullable: true),
+                    ImagePath = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -332,6 +333,28 @@ namespace PtixiakiReservations.Migrations
                         name: "FK_Seat_SubArea_SubAreaId",
                         column: x => x.SubAreaId,
                         principalTable: "SubArea",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Date",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    EventId = table.Column<int>(type: "integer", nullable: false),
+                    Day = table.Column<int>(type: "integer", nullable: false),
+                    StartTime = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
+                    EndTime = table.Column<TimeOnly>(type: "time without time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Date", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Date_Event_EventId",
+                        column: x => x.EventId,
+                        principalTable: "Event",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -414,6 +437,11 @@ namespace PtixiakiReservations.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Date_EventId",
+                table: "Date",
+                column: "EventId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Event_EventTypeId",
                 table: "Event",
                 column: "EventTypeId");
@@ -486,6 +514,9 @@ namespace PtixiakiReservations.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Date");
 
             migrationBuilder.DropTable(
                 name: "Reservation");
