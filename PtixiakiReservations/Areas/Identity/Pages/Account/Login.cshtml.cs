@@ -94,6 +94,9 @@ namespace PtixiakiReservations.Areas.Identity.Pages.Account
                 {
                     var user = await _userManager.FindByEmailAsync(Input.Email);
                     var code = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+                    Console.WriteLine("******************************************");
+                    Console.WriteLine($"YOUR 2FA CODE IS: {code}");
+                    Console.WriteLine("******************************************");
                     await _emailSender.SendEmailAsync(
                         Input.Email,
                         "Your Login Security Code",

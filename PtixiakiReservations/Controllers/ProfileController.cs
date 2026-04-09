@@ -54,7 +54,18 @@ namespace PtixiakiReservations.Controllers
             {
                 User = user,
                 Roles = roles,
-                RecentReservations = reservations
+                RecentReservations = reservations,
+
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Address = user.Address,
+                PostalCode = user.PostalCode,
+                CityId = user.CityId,
+
+                Is2faEnabled = user.TwoFactorEnabled 
             };
 
             return View(model);

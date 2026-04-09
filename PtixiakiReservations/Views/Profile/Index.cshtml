@@ -78,35 +78,37 @@
         </div>
     </div>
 
-    <div>
-        <div class="border-t border-gray-200 dark:border-gray-600 p-6">
-            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Account Settings</h2>
-            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-                <li class="py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Two-Factor Authentication</p>
-                        <p class="mt-1 text-sm text-gray-800 dark:text-white">
-                            @(Model.User.TwoFactorEnabled ? "Enabled" : "Disabled")
-                        </p>
-                    </div>
-                    <a href="@Url.Action("TwoFactorAuthentication", "Profile")" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                        Manage
-                    </a>
-                </li>
-                <li class="py-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Email Notifications</p>
-                        <p class="mt-1 text-sm text-gray-800 dark:text-white">
-                           Disabled
-                        </p>
-                    </div>
-                    <a href="@Url.Action("EmailNotifications", "Profile")" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                        Manage
-                    </a>
-                </li>
-            </ul>
-        </div>
+    <div class="p-6">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white mt-6 mb-4">Two Factor Authentication</h2>
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Enable two factor authentication to increase your profiles security</p>
+        @if (Model.Is2faEnabled)
+        {
+            <div class="flex items-center mt-4">
+            <button class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200" onclick="open2faModal(false)">Disable 2FA</button>
+            </div>
+        }
+        else
+        {
+            <div class="flex items-center mt-4">
+            <button class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200" onclick="open2faModal(true)">Enable 2FA</button>
+            </div>
+        }
 
+        <dialog id="authDialog" style="border: none; border-radius: 8px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 400px;">
+            <h3 style="text-xl font-semibold text-gray-800 dark:text-white mt-6 mb-4">Confirm Password</h3>
+            <p>Please enter your password to change 2FA settings.</p>
+            
+            <input type="password" id="confirmPassword" class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 border bg-white bg-clip-padding border-solid border-gray-300 rounded transition ease-in-out m-0" placeholder="Password" required>
+            <div id="passwordError" style="color: red; display: none; margin-top: 10px;"></div>
+            <input type="hidden" id="actionState">
+
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200" onclick="document.getElementById('authDialog').close()">Cancel</button>
+                <button type="button" class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200" onclick="submitToggle2Fa()">Confirm</button>
+            </div>
+        </dialog>
+    </div>
+    
     <!-- Recent Reservations -->
     <div class="border-t border-gray-200 dark:border-gray-600 p-6">
         <div class="flex justify-between items-center mb-4">
@@ -251,3 +253,50 @@ else
     </div>
 }
 </div>
+
+@section Scripts {
+    <script>
+    function open2faModal(enable) {
+        const dialog = document.getElementById('authDialog');
+        
+        // Clear state
+        document.getElementById('passwordError').style.display = 'none';
+        document.getElementById('confirmPassword').value = '';
+        document.getElementById('actionState').value = enable;
+
+        // Native browser command to show the dialog as a modal
+        dialog.showModal();
+    }
+
+    async function submitToggle2Fa() {
+        const password = document.getElementById('confirmPassword').value;
+        const enable = document.getElementById('actionState').value === 'true';
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const dialog = document.getElementById('authDialog');
+
+        try {
+            const response = await fetch('/ApplicationUser/Toggle2Fa', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ Password: password, Enable: enable })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                dialog.close(); // Native close
+                window.location.reload(); 
+            } else {
+                const errorDiv = document.getElementById('passwordError');
+                errorDiv.innerText = data.message || 'Error occurred.';
+                errorDiv.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    }
+</script>
+}
