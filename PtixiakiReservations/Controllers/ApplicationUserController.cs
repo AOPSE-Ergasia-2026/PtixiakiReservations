@@ -18,12 +18,14 @@ namespace PtixiakiReservations.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
 
-        public ApplicationUserController(ApplicationDbContext context, UserManager<ApplicationUser> userManager,
+        public ApplicationUserController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager)
         {
             _context = context;
             _userManager = userManager;
+            _signInManager = signInManager;
             _roleManager = roleManager;
         }
 
@@ -114,6 +116,36 @@ namespace PtixiakiReservations.Controllers
                 .ToList();
 
             return Json(cities);
+        }
+
+        public class Toggle2FaRequest
+        {
+            public string Password { get; set; }
+            public bool Enable { get; set; } // True = Turn On, False = Turn Off
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Toggle2Fa([FromBody] Toggle2FaRequest request)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
+            if (!isPasswordValid)
+            {
+                return BadRequest(new { message = "Incorrect password." });
+            }
+
+            var result = await _userManager.SetTwoFactorEnabledAsync(user, request.Enable);
+            if (result.Succeeded)
+            {
+                await _signInManager.RefreshSignInAsync(user);
+                
+                return Ok(new { message = request.Enable ? "2FA Enabled" : "2FA Disabled" });
+            }
+
+            return BadRequest(new { message = "Failed to update settings." });
         }
     }
 }

@@ -26,6 +26,9 @@ namespace PtixiakiReservations.Data
 
         public DbSet<EventType> EventType { get; set; }
 
+		public DbSet<Date> Date { get; set; }
+
+
 	protected override void OnModelCreating(ModelBuilder modelbuilder)
 	{
   	  foreach (var relationship in modelbuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))

@@ -37,6 +37,7 @@ namespace PtixiakiReservations.Areas.Identity.Pages.Account
         [BindProperty]
         public InputModel Input { get; set; }
 
+
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
         public string ReturnUrl { get; set; }
@@ -91,7 +92,15 @@ namespace PtixiakiReservations.Areas.Identity.Pages.Account
                 }
                 if (result.RequiresTwoFactor)
                 {
-                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
+                    var user = await _userManager.FindByEmailAsync(Input.Email);
+                    var code = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+                    await _emailSender.SendEmailAsync(
+                        Input.Email,
+                        "Your Login Security Code",
+                        $"Your security code is: <strong>{code}</strong>. It will expire in 3 minutes.");
+
+                    
+                    return RedirectToPage("./VerifyCode", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
                 }
                 if (result.IsLockedOut)
                 {
