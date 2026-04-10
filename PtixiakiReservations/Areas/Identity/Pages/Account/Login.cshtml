@@ -6,49 +6,77 @@
 }
 
 <div class="container mx-auto mt-10 px-4">
-    @* <h1 class="text-2xl font-bold text-gray-800 mb-4">@ViewData["Title"]</h1> *@
-
     <div class="flex justify-center">
         <div class="w-full max-w-md">
             <section class="bg-white p-6 rounded-lg shadow-md">
                 <form id="account" method="post" class="space-y-4">
-                    <div asp-validation-summary="All" class="text-red-500 text-sm"></div>
+                    <div asp-validation-summary="All" id="info_text" class="text-red-500 text-sm font-bold"></div>
 
+                    <!-- Email -->
                     <div class="form-group">
                         <label asp-for="Input.Email" class="block text-gray-700 font-medium">
                             @Html.DisplayNameFor(m => m.Input.Email)
                         </label>
-                        <input asp-for="Input.Email" class="block w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200 focus:outline-none" />
+
+                        <input asp-for="Input.Email"
+                                class="block w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg 
+                                        focus:ring focus:ring-blue-200 focus:outline-none
+                                        transition-all duration-200" />
+
                         <span asp-validation-for="Input.Email" class="text-red-500 text-xs"></span>
                     </div>
 
-                    <div class="form-group">
+                    <!-- Password with toggle -->
+                    <div class="form-group relative">
                         <label asp-for="Input.Password" class="block text-gray-700 font-medium">
                             @Html.DisplayNameFor(m => m.Input.Password)
                         </label>
-                        <input asp-for="Input.Password" class="block w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200 focus:outline-none" />
+
+                        <input asp-for="Input.Password"
+                                type="password"
+                                id="passwordInput"
+                                class="block w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg 
+                                        focus:ring focus:ring-blue-200 focus:outline-none pr-10
+                                        transition-all duration-200" />
+
+                        <!-- Toggle button -->
+                        <button type="button"
+                                onclick="togglePassword()"
+                                class="absolute right-3 top-9 text-gray-600 hover:text-gray-800">
+                            <span id="eyeIcon">🙉</span>
+                        </button>
+
                         <span asp-validation-for="Input.Password" class="text-red-500 text-xs"></span>
                     </div>
 
+                    <!-- Remember me -->
                     <div class="form-group flex items-center">
-                        <input type="checkbox" asp-for="Input.RememberMe" class="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring focus:ring-blue-200" />
-                        <label asp-for="Input.RememberMe" class="text-gray-700 text-sm">@Html.DisplayNameFor(m => m.Input.RememberMe)</label>
+                        <input type="checkbox" asp-for="Input.RememberMe"
+                               class="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring focus:ring-blue-200" />
+                        <label asp-for="Input.RememberMe" class="text-gray-700 text-sm">
+                            @Html.DisplayNameFor(m => m.Input.RememberMe)
+                        </label>
                     </div>
 
+                    <!-- Submit -->
                     <div class="form-group">
-                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:ring focus:ring-blue-200 transition duration-200">
+                        <button type="submit"
+                                class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:ring focus:ring-blue-200 transition duration-200">
                             Log in
                         </button>
                     </div>
 
+                    <!-- Links -->
                     <div class="form-group text-sm mt-4">
                         <p>
-                            <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-blue-600 hover:underline">
+                            <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl"
+                               class="text-blue-600 hover:underline">
                                 Register as a new user
                             </a>
                         </p>
                         <p>
-                            <a id="forgot-password" asp-page="./ForgotPassword" class="text-blue-600 hover:underline">
+                            <a id="forgot-password" asp-page="./ForgotPassword"
+                               class="text-blue-600 hover:underline">
                                 Forgot your password?
                             </a>
                         </p>
@@ -60,5 +88,66 @@
 
     @section Scripts {
         <partial name="_ValidationScriptsPartial" />
+
+        <script>
+            function togglePassword() {
+                const input = document.getElementById("passwordInput");
+                const icon = document.getElementById("eyeIcon");
+
+                if (input.type === "password") {
+                    input.type = "text";
+                    icon.textContent = "🙈";
+                } else {
+                    input.type = "password";
+                    icon.textContent = "🙉";
+                }
+            }
+
+            const form = document.getElementById("account");
+            const infoText = document.getElementById("info_text");
+
+            form.addEventListener("submit", function (e) {
+                let hasError = false;
+                let message = "";
+
+                const email = document.querySelector("input[name='Input.Email']");
+                const password = document.querySelector("input[name='Input.Password']");
+
+                // Reset όλα
+                [email, password].forEach(input => {
+                    input.classList.remove("border-red-500", "border-2");
+                    input.style.boxShadow = "";
+                });
+
+                // Έλεγχος Email
+                if (!email.value.trim()) {
+                    highlight(email);
+                    message = "Fill the email field";
+                    hasError = true;
+                }
+
+                // Έλεγχος Password
+                if (!password.value.trim()) {
+                    highlight(password);
+                    message = message 
+                        ? "Fill all the fields"
+                        : "Fill the password field";
+                    hasError = true;
+                }
+
+                if (hasError) {
+                    e.preventDefault();
+                    infoText.textContent = message;
+                } else {
+                    infoText.textContent = "";
+                }
+            });
+
+            function highlight(input) {
+                input.classList.add("border-red-500", "border-2");
+                input.style.boxShadow = "0 0 6px rgba(239, 68, 68, 0.5)";
+            }
+
+        </script>
     }
 </div>
