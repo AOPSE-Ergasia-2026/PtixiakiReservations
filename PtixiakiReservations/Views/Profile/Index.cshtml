@@ -95,11 +95,11 @@
         }
 
         <dialog id="authDialog" style="border: none; border-radius: 8px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 400px;">
-            <h3 style="text-xl font-semibold text-gray-800 dark:text-white mt-6 mb-4">Confirm Password</h3>
-            <p>Please enter your password to change 2FA settings.</p>
+            <h3 style="text-xl font-semibold text-gray-800 dark:text-white mt-6 mb-4 margin-bottom: 20px;">Confirm Password</h3>
+            <p style="margin-bottom: 20px;">Please enter your password to enable 2FA security.</p>
             
             <input type="password" id="confirmPassword" class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 border bg-white bg-clip-padding border-solid border-gray-300 rounded transition ease-in-out m-0" placeholder="Password" required>
-            <div id="passwordError" style="color: red; display: none; margin-top: 10px;"></div>
+            <div id="passwordError" style="color:#dc2626; display: none; margin-top: 10px;"></div>
             <input type="hidden" id="actionState">
 
             <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
