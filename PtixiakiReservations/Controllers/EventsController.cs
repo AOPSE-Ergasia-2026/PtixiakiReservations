@@ -444,7 +444,7 @@ public class EventsController(
                         SubAreaId = newEvent.SubAreaId,
                         StartDateTime = date.Add(startTimeSpan),
                         EndTime = date.Add(endTimeSpan),
-                        // CRITICAL FIX: Assign the ImagePath to every daily instance
+                        FamilyEventId = newEvent.FamilyEventId,
                         ImagePath = newEvent.ImagePath 
                     };
 
