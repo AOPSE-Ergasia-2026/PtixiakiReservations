@@ -62,7 +62,7 @@ namespace PtixiakiReservations.Controllers
         }
 
 
-        //POST: creatin event type
+        //POST: creating event family
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -76,7 +76,7 @@ namespace PtixiakiReservations.Controllers
             return View();
         }
 
-        //POST: delete event type
+        //POST: delete event family
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -98,7 +98,7 @@ namespace PtixiakiReservations.Controllers
             return RedirectToAction(nameof(ManageEventFamily));
         }
 
-        //GET: return selected event type to edit
+        //GET: return selected event family to edit
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditEventFamily(int EFId)
         {
@@ -113,7 +113,7 @@ namespace PtixiakiReservations.Controllers
             return View(ef);
         }
 
-        //POST: edit event type
+        //POST: edit event family
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
