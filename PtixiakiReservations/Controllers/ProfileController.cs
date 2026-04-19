@@ -64,6 +64,7 @@ namespace PtixiakiReservations.Controllers
                 Address = user.Address,
                 PostalCode = user.PostalCode,
                 CityId = user.CityId,
+                IsEmailConfirmed = user.EmailConfirmed,
 
                 Is2faEnabled = user.TwoFactorEnabled 
             };

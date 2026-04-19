@@ -147,5 +147,41 @@ namespace PtixiakiReservations.Controllers
 
             return BadRequest(new { message = "Failed to update settings." });
         }
+
+        // 1. This generates the code and "wakes up" the modal
+        [HttpPost]
+        public async Task<IActionResult> GenerateEmailConfirmationCode()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound();
+
+            var code = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+
+            // Output to your terminal
+            Console.WriteLine("\n*****************************************");
+            Console.WriteLine($"EMAIL VERIFICATION CODE: {code}");
+            Console.WriteLine("*****************************************\n");
+
+            return Ok(); // Tell JS it's okay to show the modal
+        }
+
+        // 2. This checks the code from the modal
+        [HttpPost]
+        public async Task<IActionResult> ConfirmEmailCode(string code)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound();
+
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, "Email", code);
+
+            if (isValid)
+            {
+                user.EmailConfirmed = true; // Sets the 'emailconfirmed' column in Postgres
+                await _userManager.UpdateAsync(user);
+                return Ok(new { success = true });
+            }
+
+            return BadRequest("Invalid code.");
+        }
     }
 }
