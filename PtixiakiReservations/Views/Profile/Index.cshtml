@@ -78,6 +78,7 @@
         </div>
     </div>
 
+<!-- Two Factor Authentication -->
     <div class="p-6">
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white mt-6 mb-4">Two Factor Authentication</h2>
         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Enable two factor authentication to increase your profiles security</p>
@@ -108,6 +109,51 @@
             </div>
         </dialog>
     </div>
+
+    <!-- Email Verification -->
+    <div class="p-6 border-t border-gray-200 dark:border-gray-600">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white mt-6 mb-4">Email Verification</h2>
+        @if (Model.IsEmailConfirmed)
+        {
+            <div class="flex items-center">
+                <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span class="ml-2 font-medium text-green-800 dark:text-green-300">Your email is verified</span>
+            </div>
+        }
+        else
+        {
+            <div class="flex items-center">
+                <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span class="ml-2 font-medium text-red-800 dark:text-red-300">Your email is not verified</span>
+                <button class="ml-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200" onclick="openEmailModal()">Resend Verification Email</button>
+            </div>
+        }
+    </div>
+
+    <dialog id="emailModal" class="rounded-xl shadow-2xl border-2 border-indigo-500 p-0 w-full max-w-md backdrop:bg-gray-900/50">
+    <div class="p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Verify Your Email</h3>
+        <p class="text-sm text-gray-500 mb-6">Enter the 6-digit code generated in your terminal.</p>
+
+        <input type="text" id="emailCodeInput" 
+               class="w-full text-center text-3xl tracking-[1rem] font-mono border-2 border-gray-300 rounded-lg py-3 focus:border-indigo-600 outline-none" 
+               placeholder="000000" maxlength="6">
+
+        <div id="emailError" class="text-red-500 text-xs mt-2 hidden">Invalid code, try again.</div>
+
+        <div class="flex justify-end gap-3 mt-8">
+            <button onclick="document.getElementById('emailModal').close()" 
+                    class="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium">Cancel</button>
+            <button onclick="submitEmailCode()" 
+                    class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">Confirm</button>
+        </div>
+    </div>
+</dialog>
+
     
     <!-- Recent Reservations -->
     <div class="border-t border-gray-200 dark:border-gray-600 p-6">
@@ -256,6 +302,28 @@ else
 
 @section Scripts {
     <script>
+        const emailModal = document.getElementById('emailModal');
+        const emailInput = document.getElementById('emailCodeInput');
+        const emailError = document.getElementById('emailError');
+
+        async function openEmailModal() {
+            // 1. Call the server to generate the code
+            const response = await fetch('/ApplicationUser/GenerateEmailConfirmationCode', { 
+                method: 'POST',
+                headers: { 'RequestVerificationToken': document.querySelector('input[name="RequestVerificationToken"]').value }
+            });
+
+            if (response.ok) {
+                // 2. Show the modal only after the code is generated
+                emailModal.showModal();
+            }
+        }
+
+    
+
+       
+
+
     function open2faModal(enable) {
         const dialog = document.getElementById('authDialog');
         

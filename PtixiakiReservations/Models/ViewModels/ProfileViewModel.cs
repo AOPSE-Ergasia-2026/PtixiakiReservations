@@ -9,6 +9,7 @@ namespace PtixiakiReservations.Models.ViewModels
         public IList<string> Roles { get; set; }
         public List<Reservation> RecentReservations { get; set; }
         public bool Is2faEnabled { get; set; }
+        public bool IsEmailConfirmed { get; set; }
         public string Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
