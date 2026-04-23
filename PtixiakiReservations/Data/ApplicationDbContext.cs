@@ -19,7 +19,6 @@ namespace PtixiakiReservations.Data
         public DbSet<Reservation> Reservation { get; set; }
         public DbSet<SubArea> SubArea { get; set; }
         public DbSet<Event> Event { get; set; }
-        public DbSet<FamilyEvent> FamilyEvent { get; set; }
         public DbSet<Seat> Seat { get; set; }
 
         public DbSet<City> City { get; set; }

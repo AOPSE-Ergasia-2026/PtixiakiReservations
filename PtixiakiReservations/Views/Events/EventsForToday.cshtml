@@ -89,16 +89,18 @@
 
     <!-- Events Grid -->
     <div id="events-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        @foreach (var item in Model)
+        @foreach (var item in Model.Where(e => e.ParentEventId == null))
         {
             var eventTimeClass = ViewBag.GetEventTimeClass != null ? ViewBag.GetEventTimeClass(item.StartDateTime) : "event-upcoming";
 
             <div class="event-card @eventTimeClass rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
                 <div class="p-5">
-
-                    @if (!string.IsNullOrEmpty(item.ImagePath))
+                    <div class="h-48 w-full overflow-hidden mb-4 rounded-md bg-gray-100">
+                    @if (!string.IsNullOrEmpty(item.DisplayImagePath))
                     {
-                        <img src="@item.ImagePath" alt="@item.Name" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300" />
+                        <img src="@item.DisplayImagePath" 
+                            alt="@item.Name" 
+                            class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300" />
                     }
                     else
                     {
@@ -108,6 +110,7 @@
                             </svg>
                         </div>
                     }
+                    </div>
                     <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">@item.Name</h3>
                     <div class="flex items-start mb-3">
                         <svg class="h-5 w-5 text-gray-500 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,7 +141,10 @@
                             </div>
                         </div>
                     }
-                    <div class="flex justify-end">
+                    <div class="flex justify-between items-center border-t pt-4">
+                        <a asp-action="ChildEvents" asp-route-id="@item.Id" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                            View Sub Events →
+                        </a>
                         <a href="@Url.Action("Details", "Events", new { id = item.Id })" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
                             View Details →
                         </a>
@@ -642,7 +648,6 @@
             });
 
             function performSearch() {
-                // Get selected dates from flatpickr
                 let startDate = null;
                 let endDate = null;
 
@@ -653,7 +658,6 @@
                         : startDate;
                 }
 
-                // Prepare search parameters
                 searchParams = {
                     eventTypeId: $('#event-type').val(),
                     startDate: startDate,
@@ -663,51 +667,94 @@
                     pageSize: pageSize
                 };
 
-                // Make search request
                 $.getJSON('/Events/SearchEvents', searchParams)
                     .done(function(data) {
-                        // Update page data
                         totalPages = data.totalPages;
                         currentPage = data.currentPage;
 
-                        // Clear existing content
-                        $('#events-container').empty();
-
-                        // Hide loading indicator
+                        const container = $('#events-container');
+                        container.empty();
                         $('#loading-indicator').addClass('hidden');
-
-                        // Update the events count
+                        $('#no-results').addClass('hidden');
                         $('#filtered-count').text(data.totalCount || 0);
 
-                        // Show no results message if needed
                         if (!data.events || data.events.length === 0) {
                             $('#no-results').removeClass('hidden');
                             $('#pagination').addClass('hidden');
                             return;
                         }
 
-                        // Build event cards
                         data.events.forEach(function(event) {
-                            const eventTimeClass = getEventTimeClass(new Date(event.startDateTime));
-                            const card = buildEventCard(event, eventTimeClass);
-                            $('#events-container').append(card);
+                            // 1. Calculate the time class (Today/Upcoming/Past)
+                            const timeClass = getEventTimeClass(new Date(event.startDateTime));
+                            
+                            // 2. Format the Date and Time strings
+                            const startDt = new Date(event.startDateTime);
+                            const endDt = new Date(event.endTime);
+                            const dateStr = startDt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+                            const timeStr = `${startDt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${endDt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+
+                            const hasImage = event.imagePath && event.imagePath.trim() !== "";
+                            // 3. Build the EXACT same HTML as the Razor loop
+                            const cardHtml = `
+                                <div class="event-card ${timeClass} rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                                    <div class="p-5">
+                                        <div class="h-48 w-full overflow-hidden mb-4 rounded-md bg-gray-100">
+                                            ${hasImage ? 
+                                                `<img src="${event.imagePath}" 
+                                                    class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300" 
+                                                    onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-gray-400\'><svg class=\'h-12 w-12\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\' /></svg></div>';"` : 
+                                                `<div class="flex items-center justify-center h-full text-gray-400">
+                                                    <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>`
+                                            }
+                                        </div>
+
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">${event.name}</h3>
+                                        
+                                        <div class="flex items-start mb-3">
+                                            <svg class="h-5 w-5 text-gray-500 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <div>
+                                                <p class="text-sm text-gray-600">${dateStr}</p>
+                                                <p class="text-sm text-gray-500">${timeStr}</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-start mb-4">
+                                            <svg class="h-5 w-5 text-gray-500 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            <div>
+                                                <p class="text-sm text-gray-600">${event.venueName}</p>
+                                                <p class="text-sm text-gray-500">${event.cityName}</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex justify-between items-center border-t pt-4">
+                                            <a href="/Events/ChildEvents/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                                View Sub Events →
+                                            </a>
+                                            <a href="/Events/Details/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                                View Details →
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            container.append(cardHtml);
                         });
 
-                        // Show events container
-                        $('#events-container').removeClass('hidden');
-
-                        // Update pagination
+                        container.removeClass('hidden');
                         updatePagination(data.totalPages > 1);
                     })
-                    .fail(function(jqXHR, textStatus, errorThrown) {
-                        console.error('Error performing search:', errorThrown);
+                    .fail(function(jqXHR) {
+                        console.error('Search failed');
                         $('#loading-indicator').addClass('hidden');
-                        $('#no-results').removeClass('hidden').find('h3').text('Error searching events');
-                        $('#pagination').addClass('hidden');
-
-                        if (jqXHR.status === 400) {
-                            $('#search-validation-message').removeClass('hidden').text(jqXHR.responseText);
-                        }
                     });
             }
 

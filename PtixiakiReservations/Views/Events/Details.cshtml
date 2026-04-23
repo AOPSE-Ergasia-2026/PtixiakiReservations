@@ -13,9 +13,15 @@
         </div>
 
         <div class="p-8">
-             @if (!string.IsNullOrEmpty(Model.ImagePath))
+        @{
+            var finalPath = !string.IsNullOrEmpty(Model.DisplayImagePath) 
+                ? Model.DisplayImagePath 
+                : Model.ParentEvent?.DisplayImagePath;
+            }
+
+            @if (!string.IsNullOrEmpty(finalPath))
                     {
-                        <img src="@Model.ImagePath" alt="@Model.Name" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300" />
+                        <img src="@finalPath" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300" />
                     }
                     else
                     {

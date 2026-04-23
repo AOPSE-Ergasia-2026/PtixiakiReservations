@@ -6,7 +6,6 @@
 
 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
     <div class="max-w-4xl mx-auto">
-        <!-- Header -->
         <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
             <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8">
                 <h1 class="text-2xl md:text-3xl font-bold text-white">Create New Event</h1>
@@ -16,13 +15,12 @@
             </div>
         </div>
 
-        <!-- Form Card -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
             <div class="p-6">
                 <form method="post" id="createEventForm" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
                     <div class="space-y-6">
-                        <!-- Event Type Selection Section -->
+                        
                         <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                             <div class="flex items-center mb-4">
                                 <div class="h-10 w-10 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600">
@@ -33,308 +31,107 @@
                                 <h2 class="ml-3 text-lg font-medium text-gray-800">Event Information</h2>
                             </div>
 
+                            <div class="bg-indigo-600 rounded-lg p-1 mb-6 flex shadow-inner">
+                                <label class="flex-1 text-center py-2 cursor-pointer transition-all rounded-md" id="labelFather">
+                                    <input type="radio" name="eventMode" value="father" class="sr-only" checked onchange="toggleEventMode('father')">
+                                    <span class="text-white font-medium">Main Event (Father)</span>
+                                </label>
+                                <label class="flex-1 text-center py-2 cursor-pointer transition-all rounded-md" id="labelChild">
+                                    <input type="radio" name="eventMode" value="child" class="sr-only" onchange="toggleEventMode('child')">
+                                    <span class="text-white font-medium">Sub-Event (Child)</span>
+                                </label>
+                            </div>
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Event Name -->
                                 <div>
                                     <label asp-for="Name" class="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                                            </svg>
-                                        </div>
-                                        <input asp-for="Name" placeholder="Enter event name" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"/>
-                                    </div>
+                                    <input asp-for="Name" placeholder="Enter event name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"/>
                                     <span asp-validation-for="Name" class="text-red-500 text-xs mt-1"></span>
                                 </div>
-
-                                <!-- Event Type Dropdown -->
                                 <div>
                                     <label asp-for="EventTypeId" class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                                            </svg>
-                                        </div>
-                                        <select asp-for="EventTypeId" asp-items="ViewBag.EventTypeList" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                                        </select>
-                                    </div>
-                                    <span asp-validation-for="EventTypeId" class="text-red-500 text-xs mt-1"></span>
+                                    <select asp-for="EventTypeId" asp-items="ViewBag.EventTypeList" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"></select>
                                 </div>
                             </div>
                         </div>
+
+                        <div id="parentEventSection" class="hidden bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h2 class="text-lg font-medium text-gray-800 mb-4">Parent Event Selection</h2>
+                            <input type="hidden" asp-for="ParentEventId" id="ParentEventId" name="ParentEventId" />
+                            <div class="search-container relative max-w-md">
+                                <label class="text-sm font-medium text-gray-700">Search Father Event</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="parentEventSearch" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white" placeholder="Start typing..." autocomplete="off" />
+                                    <button class="px-4 py-2 bg-gray-200 rounded-md text-sm hidden" type="button" id="clearParentSelection">Clear</button>
+                                </div>
+                                <ul id="searchResults" class="absolute w-full bg-white border rounded-b-lg shadow-xl z-50 hidden max-h-60 overflow-y-auto"></ul>
+                            </div>
+                            <p id="parentRequiredError" class="text-red-500 text-xs mt-2 hidden font-bold">You must select a father event to continue in child mode!</p>
+                        </div>
+
                         <div class="mt-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Event Poster / Image</label>
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-400 transition-colors bg-white">
-                                <div class="space-y-1 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                    <div class="flex text-sm text-gray-600">
-                                        <label for="imageFile" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
-                                            <span>Upload a file</span>
-                                            <input id="imageFile" name="imageFile" type="file" class="sr-only" accept="image/*" onchange="previewImage(this)">
-                                        </label>
-                                        <p class="pl-1">or drag and drop</p>
-                                    </div>
-                                    <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Event Poster</label>
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg bg-white">
+                                <div class="text-center">
+                                    <label for="imageFile" class="cursor-pointer font-medium text-indigo-600">
+                                        <span>Upload a file</span>
+                                        <input id="imageFile" name="imageFile" type="file" class="sr-only" accept="image/*" onchange="previewImage(this)">
+                                    </label>
+                                    <p id="childImageNote" class="hidden text-indigo-500 text-xs italic mt-1">Inherits Father's image if left empty</p>
                                 </div>
                             </div>
                             <div id="imagePreviewContainer" class="hidden mt-4">
-                                <p class="text-xs font-medium text-gray-500 mb-2">Selected Preview:</p>
-                                <img id="imagePreview" src="#" alt="Preview" class="h-32 w-auto rounded-lg shadow-sm border border-gray-200">
+                                <img id="imagePreview" src="#" class="h-32 w-auto rounded-lg shadow-sm border">
                             </div>
                         </div>
 
-                        <!-- Venue & Sub Area Section -->
                         <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div class="flex items-center mb-4">
-                                <div class="h-10 w-10 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                    </svg>
-                                </div>
-                                <h2 class="ml-3 text-lg font-medium text-gray-800">Venue & Location</h2>
-                            </div>
-
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Venue Selection -->
                                 <div>
-                                    <label asp-for="VenueId" class="block text-sm font-medium text-gray-700 mb-1">Select Venue</label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                            </svg>
-                                        </div>
-                                        <select asp-for="VenueId" asp-items="ViewBag.VenueList" id="venueSelect" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none bg-white" required>
-                                            <option value="">Select a venue</option>
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <span asp-validation-for="VenueId" class="text-red-500 text-xs mt-1"></span>
+                                    <label asp-for="VenueId" class="block text-sm font-medium text-gray-700 mb-1">Venue</label>
+                                    <select asp-for="VenueId" asp-items="ViewBag.VenueList" id="venueSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white disabled:bg-gray-100 disabled:text-gray-400" required>
+                                        <option value="">Select a venue</option>
+                                    </select>
                                 </div>
-
-                                <!-- Sub Area Selection -->
                                 <div>
-                                    <label asp-for="SubAreaId" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Select Sub Area <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
-                                            </svg>
-                                        </div>
-                                        <select asp-for="SubAreaId" id="subAreaSelect" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none bg-white" required>
-                                            <option value="">First select a venue</option>
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <span asp-validation-for="SubAreaId" class="text-red-500 text-xs mt-1"></span>
-                                    <p class="text-xs text-gray-500 mt-1">Sub area is required for seat reservations</p>
+                                    <label asp-for="SubAreaId" class="block text-sm font-medium text-gray-700 mb-1">Sub Area</label>
+                                    <select asp-for="SubAreaId" id="subAreaSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white disabled:bg-gray-100" required>
+                                        <option value="">Select a sub area</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Event Family Selection -->
-
                         <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div class="flex items-center mb-4">
-                                <div class="h-10 w-10 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                </div>
-                                <h2 class="ml-3 text-lg font-medium text-gray-800">Event Family</h2>
+                            <div id="multiDayToggleContainer" class="flex items-center mb-6">
+                                <input type="checkbox" id="isMultiDay" name="IsMultiDay" class="h-5 w-5 text-indigo-600 border-gray-300 rounded">
+                                <label for="isMultiDay" class="ml-3 font-medium text-gray-700">Create events for multiple days</label>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Event Family creation -->
-                                <div>
-                                    
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Create Event Family</label>
-                                    <div class="relative">
-                                        <input placeholder="Enter Event Family Name" id="FamilyEventName" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"/>
-                                        <button type="button" class="px-6 py-2 my-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-md shadow hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform transition hover:-translate-y-0.5"
-                                        onclick="CreateFamilyEvent()">
-                                            Create
-                                        </button>                                   
-                                    </div>
-                                    <span class="text-red-500 text-xs mt-1"></span>
-                                </div>
-
-                                <!-- Exisitng event family Dropdown -->
-                                <div class="form-group">
-                                    <label asp-for="FamilyEventId">Select Event Family</label>
-                                    <select asp-for="FamilyEventId" id="familyEventDropdown" class="form-select pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none bg-white">
-                                        <option value="">-- Select a Family --</option>
-                                        </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Schedule Section -->
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div class="flex items-center mb-4">
-                                <div class="h-10 w-10 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                </div>
-                                <h2 class="ml-3 text-lg font-medium text-gray-800">Event Schedule</h2>
+                            <div id="singleDayContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <input asp-for="StartDateTime" type="datetime-local" class="w-full border p-2 rounded-lg disabled:bg-gray-100" />
+                                <input asp-for="EndTime" type="datetime-local" class="w-full border p-2 rounded-lg disabled:bg-gray-100" />
                             </div>
 
-                            <!-- Toggle for Single vs Multi-day events -->
-                            <div class="relative flex items-start mb-6">
-                                <div class="flex items-center h-5">
-                                    <input type="checkbox" id="isMultiDay" name="IsMultiDay" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded transition-colors">
-                                </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="isMultiDay" class="font-medium text-gray-700">Create events for multiple days</label>
-                                    <p class="text-gray-500">When enabled, this will create separate events for each day in the selected range</p>
-                                </div>
-                            </div>
-
-                            <!-- Single Day Container -->
-                            <div id="singleDayContainer" class="space-y-6">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label asp-for="StartDateTime" class="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                            </div>
-                                            <input asp-for="StartDateTime" type="datetime-local" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")"/>
-                                        </div>
-                                        <span asp-validation-for="StartDateTime" class="text-red-500 text-xs mt-1"></span>
-                                    </div>
-
-                                    <div>
-                                        <label asp-for="EndTime" class="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                            </div>
-                                            <input asp-for="EndTime" type="datetime-local" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" value="@DateTime.Now.AddHours(2).ToString("yyyy-MM-ddTHH:mm")"/>
-                                        </div>
-                                        <span asp-validation-for="EndTime" class="text-red-500 text-xs mt-1"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Multi-day Container -->
                             <div id="multiDayContainer" class="hidden space-y-6">
-                                <!-- Hidden fields for model binding when in multi-day mode -->
                                 <input asp-for="StartDateTime" type="hidden" id="multiStartDateTime" />
                                 <input asp-for="EndTime" type="hidden" id="multiEndDateTime" />
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <!-- Start Date -->
-                                    <div>
-                                        <label for="StartDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                </svg>
-                                            </div>
-                                            <input id="StartDate" name="StartDate" type="date" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" value="@DateTime.Today.ToString("yyyy-MM-dd")"/>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">First day to create an event</p>
-                                    </div>
-
-                                    <!-- End Date -->
-                                    <div>
-                                        <label for="EndDate" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                </svg>
-                                            </div>
-                                            <input id="EndDate" name="EndDate" type="date" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" value="@DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")"/>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">Last day to create an event</p>
-                                    </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input id="StartDate" type="date" class="border p-2 rounded-lg disabled:bg-gray-100" />
+                                    <input id="EndDate" type="date" class="border p-2 rounded-lg disabled:bg-gray-100" />
+                                    <input id="StartTime" type="time" class="border p-2 rounded-lg disabled:bg-gray-100" />
+                                    <input id="DailyEndTime" type="time" class="border p-2 rounded-lg disabled:bg-gray-100" />
                                 </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <!-- Daily Start Time -->
-                                    <div>
-                                        <label for="StartTime" class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                            </div>
-                                            <input id="StartTime" name="StartTime" type="time" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" value="@DateTime.Now.ToString("HH:mm")"/>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">Time each day's event will start</p>
-                                    </div>
-
-                                    <!-- Daily End Time -->
-                                    <div>
-                                        <label for="EndTime" class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                            </div>
-                                            <input id="EndTime" name="EndTime" type="time" class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" value="@DateTime.Now.AddHours(2).ToString("HH:mm")"/>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">Time each day's event will end</p>
-                                    </div>
-                                </div>
-
-                                <!-- Preview of event dates -->
-                                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4" id="datePreviewContainer">
-                                    <h3 class="text-sm font-medium text-blue-800 mb-2 flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        Event Preview
-                                    </h3>
-                                    <p class="text-sm text-blue-700 mb-2">
-                                        Based on your selection, the following events will be created:
-                                    </p>
-                                    <div id="eventPreviewList" class="text-sm text-blue-600 max-h-24 overflow-y-auto pl-2">
-                                        <!-- This will be populated by JavaScript -->
-                                    </div>
-                                    <p class="text-xs text-blue-500 mt-2">
-                                        <span id="eventCount">0</span> events total
-                                    </p>
+                                <div id="datePreviewContainer" class="bg-blue-50 p-4 rounded hidden">
+                                    <div id="eventPreviewList" class="text-sm"></div>
+                                    <p class="text-xs mt-2"><span id="eventCount">0</span> events total</p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Submit Buttons -->
-                        <div class="flex justify-end space-x-3 pt-5 border-t border-gray-200">
-                            <a href="@Url.Action("EventsForToday", "Events")" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm">
-                                Cancel
-                            </a>
-                            <button type="submit" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-md shadow hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform transition hover:-translate-y-0.5">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
-                                </svg>
-                                Create Event
-                            </button>
+                        <div class="flex justify-end space-x-3 pt-5 border-t">
+                            <a href="@Url.Action("EventsForToday", "Events")" class="px-4 py-2 text-gray-700">Cancel</a>
+                            <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-md">Create Event</button>
                         </div>
                     </div>
                 </form>
@@ -344,238 +141,227 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 
     <script>
-
-        async function loadFamilyEvents(selectedId = null) {
-            const dropdown = document.getElementById('familyEventDropdown');
+        document.addEventListener("DOMContentLoaded", function () {
+            // --- Elements ---
+            const form = document.getElementById('createEventForm');
+            const modeRadios = document.getElementsByName('eventMode');
+            const parentEventSection = document.getElementById('parentEventSection');
+            const multiDayToggleContainer = document.getElementById('multiDayToggleContainer');
+            const isMultiDay = document.getElementById('isMultiDay');
+            const venueSelect = document.getElementById('venueSelect');
+            const subAreaSelect = document.getElementById('subAreaSelect');
+            const childImageNote = document.getElementById('childImageNote');
+            const parentError = document.getElementById('parentRequiredError');
             
-            try {
-                const response = await fetch('/FamilyEvent/GetAllEventFamilies');
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    dropdown.innerHTML = '<option value="">-- Select a Family Event --</option>';
-                    
+            const searchInput = document.getElementById('parentEventSearch');
+            const resultsList = document.getElementById('searchResults');
+            const hiddenIdInput = document.getElementById('ParentEventId');
+            const clearBtn = document.getElementById('clearParentSelection');
 
-                    data.forEach(family => {
-                        const option = document.createElement('option');
-                        option.value = family.id;
-                        option.textContent = family.name;
-                        dropdown.appendChild(option);
-                    });
+            const startInput = document.querySelector('input[name="StartDateTime"]:not([type="hidden"])');
+            const endInput = document.querySelector('input[name="EndTime"]:not([type="hidden"])');
+            const multiStartDate = document.getElementById('StartDate');
+            const multiEndDate = document.getElementById('EndDate');
+            const multiStartTime = document.getElementById('StartTime');
+            const multiDailyEndTime = document.getElementById('DailyEndTime');
 
-                    if (selectedId) {
-                        dropdown.value = selectedId;
-                    }
-                } else {
-                    dropdown.innerHTML = '<option value="">-- Failed to load --</option>';
-                }
-            } catch (error) {
-                console.error("Error fetching event families:", error);
-                dropdown.innerHTML = '<option value="">-- Error loading --</option>';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadFamilyEvents();
-        });
-
-        async function CreateFamilyEvent() {
-            const nameInput = document.getElementById('FamilyEventName');
-            const name = nameInput.value;
-            
-            const response = await fetch('/FamilyEvent/CreateEventFamily', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ EFName: name }) 
-            });
-
-            if (response.ok) {
-                const data = await response.json(); 
-                
-                if (data.success) {
-                    const dropdown = document.getElementById('familyEventDropdown');
-
-                    const newOption = new Option(data.name, data.id, false, true);
-                    
-                    dropdown.add(newOption);
-                    
-                    nameInput.value = ''; 
-                    
-                } else {
-                    alert(data.message || "The server rejected the name.");
-                }
-            } else {
-                alert("Network error: Failed to reach the server.");
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const multiDayCheckbox = document.getElementById('isMultiDay');
             const singleDayContainer = document.getElementById('singleDayContainer');
             const multiDayContainer = document.getElementById('multiDayContainer');
 
-            // Elements for preview
-            const startDateInput = document.getElementById('StartDate');
-            const endDateInput = document.getElementById('EndDate');
-            const startTimeInput = document.getElementById('StartTime');
-            const endTimeInput = document.getElementById('EndTime');
-            const eventPreviewList = document.getElementById('eventPreviewList');
-            const eventCountSpan = document.getElementById('eventCount');
+            const allScheduleInputs = [startInput, endInput, multiStartDate, multiEndDate, multiStartTime, multiDailyEndTime];
 
-            // Hidden fields for model binding in multi-day mode
-            const multiStartDateTime = document.getElementById('multiStartDateTime');
-            const multiEndDateTime = document.getElementById('multiEndDateTime');
+            // --- 1. Mode Logic ---
+            window.toggleEventMode = function(mode) {
+                const isFather = (mode === 'father');
+                parentEventSection.classList.toggle('hidden', isFather);
+                multiDayToggleContainer.classList.toggle('hidden', isFather);
+                if(childImageNote) childImageNote.classList.toggle('hidden', isFather);
 
-            const venueSelect = document.getElementById('venueSelect');
-            const subAreaSelect = document.getElementById('subAreaSelect');
+                if (isFather) {
+                    venueSelect.disabled = false;
+                    subAreaSelect.disabled = false;
+                    allScheduleInputs.forEach(i => i.disabled = false);
+                    isMultiDay.checked = false;
+                    singleDayContainer.classList.remove('hidden');
+                    multiDayContainer.classList.add('hidden');
+                    if(parentError) parentError.classList.add('hidden');
+                    resetDateConstraints();
+                } else {
+                    venueSelect.disabled = true;
+                    subAreaSelect.disabled = true;
+                    allScheduleInputs.forEach(i => i.disabled = true);
+                }
+                updateRadioStyles();
+            };
 
-            window.previewImage = function(input) {
-                const previewContainer = document.getElementById('imagePreviewContainer');
-                const previewImage = document.getElementById('imagePreview');
-                
-                if (input.files && input.files[0]) {
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        previewImage.src = e.target.result;
-                        previewContainer.classList.remove('hidden');
-                    }
-                    
-                    reader.readAsDataURL(input.files[0]);
+            function updateRadioStyles() {
+                const isFather = modeRadios[0].checked;
+                const labelF = document.getElementById('labelFather');
+                const labelC = document.getElementById('labelChild');
+                if (isFather) {
+                    labelF.className = "flex-1 text-center py-2 cursor-pointer transition-all rounded-md bg-white shadow-sm";
+                    labelF.querySelector('span').className = "text-indigo-700 font-bold";
+                    labelC.className = "flex-1 text-center py-2 cursor-pointer transition-all rounded-md";
+                    labelC.querySelector('span').className = "text-white font-medium";
+                } else {
+                    labelC.className = "flex-1 text-center py-2 cursor-pointer transition-all rounded-md bg-white shadow-sm";
+                    labelC.querySelector('span').className = "text-indigo-700 font-bold";
+                    labelF.className = "flex-1 text-center py-2 cursor-pointer transition-all rounded-md";
+                    labelF.querySelector('span').className = "text-white font-medium";
                 }
             }
 
-            // Function to update hidden fields for multi-day mode
-            function updateHiddenFields() {
-                if (multiDayCheckbox.checked) {
-                    const startDate = startDateInput.value;
-                    const startTime = startTimeInput.value;
-                    const endTime = endTimeInput.value;
+            // --- 2. Selection ---
+            function selectParent(ev) {
+                hiddenIdInput.value = ev.id;
+                searchInput.value = ev.name;
+                searchInput.disabled = true;
+                clearBtn.classList.remove('hidden');
+                resultsList.classList.add('hidden');
+                if(parentError) parentError.classList.add('hidden');
 
-                    if (startDate && startTime) {
-                        multiStartDateTime.value = `${startDate}T${startTime}`;
-                    }
-                    if (startDate && endTime) {
-                        multiEndDateTime.value = `${startDate}T${endTime}`;
-                    }
+                venueSelect.value = ev.venueId;
+                venueSelect.disabled = true;
+                subAreaSelect.disabled = false;
+                venueSelect.dispatchEvent(new Event('change'));
+
+                allScheduleInputs.forEach(i => i.disabled = false);
+
+                if (ev.rawStartDate && ev.rawEndDate) {
+                    const minD = ev.rawStartDate.split('T')[0];
+                    const maxD = ev.rawEndDate.split('T')[0];
+                    startInput.min = ev.rawStartDate; startInput.max = ev.rawEndDate;
+                    endInput.min = ev.rawStartDate; endInput.max = ev.rawEndDate;
+                    multiStartDate.min = minD; multiStartDate.max = maxD;
+                    multiEndDate.min = minD; multiEndDate.max = maxD;
+                    
+                    multiStartTime.value = ev.rawStartDate.split('T')[1].substring(0,5);
+                    multiDailyEndTime.value = ev.rawEndDate.split('T')[1].substring(0,5);
                 }
+                if (isMultiDay.checked) updatePreview();
             }
 
-            // Load sub areas when venue is selected
-            venueSelect.addEventListener('change', function () {
-                const venueId = this.value;
-
-                // Reset sub area select
-                subAreaSelect.innerHTML = '<option value="">Loading...</option>';
-
-                if (!venueId) {
-                    subAreaSelect.innerHTML = '<option value="">First select a venue</option>';
-                    return;
-                }
-
-                // Fetch sub areas for the selected venue
-                fetch(`/Events/GetSubAreas?venueId=${venueId}`)
-                    .then(response => response.json())
+            searchInput.addEventListener('input', function(e) {
+                if (e.target.value.length < 2) { resultsList.classList.add('hidden'); return; }
+                fetch(`/Events/SearchParentEvents?query=${encodeURIComponent(e.target.value)}`)
+                    .then(res => res.json())
                     .then(data => {
-                        subAreaSelect.innerHTML = '<option value="">Select a sub area</option>';
-
-                        if (data && data.length > 0) {
-                            data.forEach(subArea => {
-                                const option = document.createElement('option');
-                                option.value = subArea.id;
-                                option.textContent = subArea.areaName;
-                                subAreaSelect.appendChild(option);
-                            });
-                        } else {
-                            subAreaSelect.innerHTML = '<option value="">No sub areas available</option>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching sub areas:', error);
-                        subAreaSelect.innerHTML = '<option value="">Error loading sub areas</option>';
+                        resultsList.innerHTML = '';
+                        data.forEach(ev => {
+                            const li = document.createElement('li');
+                            li.className = 'p-3 hover:bg-indigo-50 cursor-pointer border-b text-sm';
+                            li.innerHTML = `<strong>${ev.name}</strong><br><small>${ev.venue} | ${ev.date}</small>`;
+                            li.onclick = () => selectParent(ev);
+                            resultsList.appendChild(li);
+                        });
+                        resultsList.classList.remove('hidden');
                     });
             });
 
-            // Toggle between single and multi-day
-            multiDayCheckbox.addEventListener('change', function () {
-                if (this.checked) {
-                    singleDayContainer.classList.add('hidden');
-                    multiDayContainer.classList.remove('hidden');
-                    updateEventPreview();
-                    updateHiddenFields();
-                } else {
-                    singleDayContainer.classList.remove('hidden');
-                    multiDayContainer.classList.add('hidden');
+            clearBtn.onclick = () => {
+                hiddenIdInput.value = ''; searchInput.value = ''; searchInput.disabled = false;
+                clearBtn.classList.add('hidden'); 
+                if(modeRadios[1].checked) {
+                    venueSelect.value = "";
+                    subAreaSelect.disabled = true;
+                    allScheduleInputs.forEach(i => i.disabled = true);
                 }
+                resetDateConstraints();
+            };
+
+            function resetDateConstraints() {
+                // 1. Clear the min/max limits
+                allScheduleInputs.forEach(i => { 
+                    i.removeAttribute('min'); 
+                    i.removeAttribute('max'); 
+                });
+
+                // 2. Generate "Today" strings for the browser
+                const now = new Date();
+                
+                // Helper to format dates correctly for HTML inputs (yyyy-MM-ddTHH:mm)
+                const tzOffset = now.getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
+                
+                // Create an end time 2 hours from now
+                const later = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+                const localISOLater = (new Date(later - tzOffset)).toISOString().slice(0, 16);
+
+                // 3. Pre-select today's date/time
+                startInput.value = localISOTime;
+                endInput.value = localISOLater;
+
+                // Also update multi-day defaults
+                const todayDate = localISOTime.split('T')[0];
+                multiStartDate.value = todayDate;
+                multiEndDate.value = todayDate;
+            }
+
+            // --- 3. Previous Functions ---
+            venueSelect.addEventListener('change', function() {
+                if(!this.value) return;
+                fetch(`/Events/GetSubAreas?venueId=${this.value}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        subAreaSelect.innerHTML = '<option value="">Select a sub area</option>';
+                        data.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value = s.id; opt.textContent = s.areaName;
+                            subAreaSelect.appendChild(opt);
+                        });
+                    });
             });
 
-            // Function to update event preview
-            function updateEventPreview() {
-                const startDate = startDateInput.value;
-                const endDate = endDateInput.value;
+            isMultiDay.onchange = function() {
+                singleDayContainer.classList.toggle('hidden', this.checked);
+                multiDayContainer.classList.toggle('hidden', !this.checked);
+                if(this.checked) updatePreview();
+            };
 
-                if (!startDate || !endDate) {
-                    eventPreviewList.innerHTML = '<div class="text-gray-500 italic">Select both start and end dates to see preview</div>';
-                    eventCountSpan.textContent = '0';
+            function updatePreview() {
+                const s = new Date(multiStartDate.value);
+                const e = new Date(multiEndDate.value);
+                const cont = document.getElementById('datePreviewContainer');
+                if (isNaN(s) || isNaN(e) || s > e) { cont.classList.add('hidden'); return; }
+                
+                let list = ""; let count = 0;
+                for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+                    list += `<div>${d.toLocaleDateString()}</div>`; count++;
+                }
+                document.getElementById('eventPreviewList').innerHTML = list;
+                document.getElementById('eventCount').textContent = count;
+                cont.classList.remove('hidden');
+                
+                document.getElementById('multiStartDateTime').value = `${multiStartDate.value}T${multiStartTime.value}`;
+                document.getElementById('multiEndDateTime').value = `${multiEndDate.value}T${multiDailyEndTime.value}`;
+            }
+            [multiStartDate, multiEndDate, multiStartTime, multiDailyEndTime].forEach(i => i.onchange = updatePreview);
+
+            form.addEventListener('submit', function(e) {
+                if (modeRadios[1].checked && !hiddenIdInput.value) {
+                    e.preventDefault();
+                    if(parentError) parentError.classList.remove('hidden');
                     return;
                 }
-
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-
-                if (start > end) {
-                    eventPreviewList.innerHTML = '<div class="text-red-500 italic">End date must be after start date</div>';
-                    eventCountSpan.textContent = '0';
-                    return;
-                }
-
-                const dates = [];
-                const current = new Date(start);
-
-                while (current <= end) {
-                    dates.push(new Date(current));
-                    current.setDate(current.getDate() + 1);
-                }
-
-                // If there are more events than shown in the preview
-                if (dates.length > 10) {
-                    eventPreviewList.innerHTML = `
-                        <div>${dates.slice(0, 5).map(d => d.toLocaleDateString()).join('<br>')}</div>
-                        <div class="text-gray-500 italic mt-1">... and ${dates.length - 5} more dates</div>
-                    `;
-                } else {
-                    eventPreviewList.innerHTML = dates.map(d => d.toLocaleDateString()).join('<br>');
-                }
-
-                eventCountSpan.textContent = dates.length;
-                updateHiddenFields();
-            }
-
-            // Add event listeners for date preview updates and hidden field updates
-            if (startDateInput && endDateInput) {
-                startDateInput.addEventListener('change', updateEventPreview);
-                endDateInput.addEventListener('change', updateEventPreview);
-            }
-
-            if (startTimeInput && endTimeInput) {
-                startTimeInput.addEventListener('change', updateHiddenFields);
-                endTimeInput.addEventListener('change', updateHiddenFields);
-            }
-
-            // Update hidden fields before form submission
-            document.getElementById('createEventForm').addEventListener('submit', function() {
-                if (multiDayCheckbox.checked) {
-                    updateHiddenFields();
-                }
+                venueSelect.disabled = false;
+                allScheduleInputs.forEach(i => i.disabled = false);
             });
+
+            toggleEventMode('father');
         });
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { 
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
     </script>
 }

@@ -80,29 +80,28 @@ namespace PtixiakiReservations.Controllers
         }
 
         // GET: SubAreas/Create
-        [Authorize(Roles = "Venue")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Venue,Admin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] JsonSubAreaModel[] subareas)
         {
             if (subareas == null || !subareas.Any())
             {
-                ViewBag.Error = "Something went wrong";
-                return View("Error");
+                return BadRequest(new { error = "No sub-areas provided" });
             }
 
-            // Get user ID
             var userId = _usermanager.GetUserId(HttpContext.User);
+
+            // Get all valid Venue IDs for this user once to avoid hitting DB in a loop
+            var userVenueIds = await _context.Venue
+                .Where(v => v.UserId == userId)
+                .Select(v => v.Id)
+                .ToListAsync();
 
             foreach (var subarea in subareas)
             {
-                // Validate that the venue belongs to the current user
-                var venue = await _context.Venue
-                    .FirstOrDefaultAsync(v => v.Id == subarea.VenueId && v.UserId == userId);
-
-                if (venue == null)
+                if (!userVenueIds.Contains(subarea.VenueId))
                 {
-                    return BadRequest("Invalid venue selection");
+                    return Forbid(); // User trying to add areas to someone else's venue
                 }
 
                 SubArea newSubArea = new SubArea
@@ -113,14 +112,15 @@ namespace PtixiakiReservations.Controllers
                     Rotate = subarea.Rotate,
                     Top = subarea.Top,
                     Left = subarea.Left,
-                    VenueId = subarea.VenueId
+                    VenueId = subarea.VenueId 
+                    // NOTE: If you migrate to Layouts, this would be: 
+                    // VenueLayoutId = subarea.LayoutId
                 };
                 _context.Add(newSubArea);
             }
-            await _context.SaveChangesAsync();
 
-            Response.StatusCode = (int)HttpStatusCode.OK;
-            return Json(Response.StatusCode);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Successfully created all sub-areas" });
         }
 
         [HttpPost]
