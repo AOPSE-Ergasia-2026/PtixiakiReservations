@@ -909,18 +909,23 @@ private async Task ReloadCreateDropdowns(string userId)
     [HttpGet]
     public async Task<IActionResult> GetUserEvents()
     {
-        // Get the current user ID
         var userId = userManager.GetUserId(User);
 
-        // Get all events created by the user
         var events = await context.Event
             .Include(e => e.EventType)
             .Include(e => e.Venue)
             .Where(e => e.Venue.UserId == userId)
             .OrderByDescending(e => e.StartDateTime)
+            .Select(e => new {
+                e.Id,
+                e.Name,
+                e.StartDateTime,
+                e.EndTime,
+                EventType = new { e.EventType.Name },
+                Venue = new { e.Venue.Name },
+                // Add other fields you need for your JS here
+            })
             .ToListAsync();
-
-        logger.LogInformation("Found {Count} events for user {UserId}", events.Count, userId);
 
         return Json(events);
     }
