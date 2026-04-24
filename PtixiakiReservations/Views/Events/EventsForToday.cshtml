@@ -197,10 +197,23 @@
 </div>
 
 <style>
-    /* Event card styles with transitions and hover effects */
     .event-card {
+        display: flex;
+        flex-direction: column; 
+        height: 100%;          
         transition: all 0.3s ease;
         border-left: 4px solid #e2e8f0;
+        .
+        min-height: 400px; /* Force the card to have height even if data is missing */
+        background-color: white;
+    }
+    .event-content {
+        flex-grow: 1;          
+        display: flex;
+        flex-direction: column;
+    }
+    .event-footer {
+        margin-top: auto;      
     }
 
     /* Today events - green accent */
@@ -685,34 +698,37 @@
                         }
 
                         data.events.forEach(function(event) {
-                            // 1. Calculate the time class (Today/Upcoming/Past)
+
                             const timeClass = getEventTimeClass(new Date(event.startDateTime));
                             
-                            // 2. Format the Date and Time strings
-                            const startDt = new Date(event.startDateTime);
-                            const endDt = new Date(event.endTime);
-                            const dateStr = startDt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-                            const timeStr = `${startDt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${endDt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+                            const cardHtml = buildEventCard(event, timeClass);
+                            
+                            container.append(cardHtml);
+
+                        });
+
+                        function buildEventCard(event, timeClass) {
+                            const startDate = new Date(event.startDateTime);
+                            const endDate = new Date(event.endTime);
+                            
+                            // Format safely
+                            const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+                            const timeStr = `${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 
                             const hasImage = event.imagePath && event.imagePath.trim() !== "";
-                            // 3. Build the EXACT same HTML as the Razor loop
-                            const cardHtml = `
-                                <div class="event-card ${timeClass} rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                                    <div class="p-5">
-                                        <div class="h-48 w-full overflow-hidden mb-4 rounded-md bg-gray-100">
-                                            ${hasImage ? 
-                                                `<img src="${event.imagePath}" 
-                                                    class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300" 
-                                                    onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-gray-400\'><svg class=\'h-12 w-12\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\' /></svg></div>';"` : 
-                                                `<div class="flex items-center justify-center h-full text-gray-400">
-                                                    <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>`
-                                            }
-                                        </div>
 
-                                        <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">${event.name}</h3>
+                            return `
+                            <div class="event-card ${timeClass} rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                                <div class="p-5 flex flex-col h-full">
+                                    <div class="h-48 w-full overflow-hidden mb-4 rounded-md bg-gray-100 flex-shrink-0">
+                                        ${hasImage ? 
+                                            `<img src="${event.imagePath}" alt="${event.name}" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300" />` : 
+                                            `<div class="flex items-center justify-center h-full text-gray-400"><svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>`
+                                        }
+                                    </div>
+                                    
+                                    <div class="event-content flex-grow">
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">${event.name || 'Unnamed Event'}</h3>
                                         
                                         <div class="flex items-start mb-3">
                                             <svg class="h-5 w-5 text-gray-500 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -730,24 +746,23 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
                                             <div>
-                                                <p class="text-sm text-gray-600">${event.venueName}</p>
-                                                <p class="text-sm text-gray-500">${event.cityName}</p>
+                                                <p class="text-sm text-gray-600">${event.venueName || 'No Venue'}</p>
+                                                <p class="text-sm text-gray-500">${event.cityName || ''}</p>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <div class="flex justify-between items-center border-t pt-4">
-                                            <a href="/Events/ChildEvents/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-                                                View Sub Events →
-                                            </a>
-                                            <a href="/Events/Details/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-                                                View Details →
-                                            </a>
-                                        </div>
+                                    <div class="event-footer flex justify-between items-center border-t pt-4">
+                                        <a href="/Events/ChildEvents/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                            View Sub Events →
+                                        </a>
+                                        <a href="/Events/Details/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                            View Details →
+                                        </a>
                                     </div>
                                 </div>
-                            `;
-                            container.append(cardHtml);
-                        });
+                            </div>`;
+                        }
 
                         container.removeClass('hidden');
                         updatePagination(data.totalPages > 1);
