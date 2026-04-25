@@ -26,8 +26,6 @@ public class ReservationController(
     // GET: Reservations        
     public async Task<IActionResult> Index(bool flag, string sortOrder)
     {
-        List<Reservation> res = new List<Reservation>();
-
         ViewBag.Flag = flag;
 
         ViewData["NameSortParm"] = sortOrder == "LastName" ? "LastName_desc" : "LastName";
@@ -36,50 +34,29 @@ public class ReservationController(
         ViewData["AreaNameSortParm"] = sortOrder == "AreaName" ? "AreaName_desc" : "AreaName";
         ViewData["EventSortParm"] = sortOrder == "Event" ? "Event_desc" : "Event";
 
-
-        if (flag == true)
-        {
-            res =
-                _context.Reservation.Include(r => r.Event)
-                    .Include(r => r.ApplicationUser)
-                    .Include(r => r.Seat)
-                    .Include(r => r.Seat.SubArea)
-                    .Include(r => r.Seat.SubArea.Venue)
-                    .Where(r => r.Seat.SubArea.Venue.UserId == _userManager.GetUserId(HttpContext.User)).ToList();
-
-            res = FilterRes(sortOrder, res);
-            return View(res);
-        }
-
         string id = _userManager.GetUserId(HttpContext.User);
+        
+        // Safety check: If they aren't logged in, send them away
+        if (string.IsNullOrEmpty(id)) return RedirectToPage("/Account/Login", new { area = "Identity" });
+
         var user = await _userManager.FindByIdAsync(id);
-        var tmp1 = await _userManager.GetRolesAsync(user);
+        var roles = await _userManager.GetRolesAsync(user);
 
-        if (tmp1.Contains("Venue"))
-        {
-            DateTime date = DateTime.Now;
-            TimeSpan span = TimeSpan.FromHours(14);
-            TimeSpan span2 = TimeSpan.FromHours(-14);
+        List<Reservation> res;
 
-            res = _context.Reservation.Include(r => r.Event)
-                .Include(r => r.ApplicationUser)
-                .Include(r => r.Seat)
-                .Include(r => r.Seat.SubArea)
-                .Include(r => r.Seat.SubArea.Venue)
-                .Where(r => r.Seat.SubArea.Venue.UserId == _userManager.GetUserId(HttpContext.User)
-                ).ToList();
-
-
-            res = res.Where(
-                r => r.Date.Subtract((DateTime)date) <= span && r.Date.Subtract((DateTime)date) >= span2).ToList();
-            res = FilterRes(sortOrder, res);
-            return View(res);
-        }
-
+        res = await _context.Reservation
+            .Include(r => r.Event)
+            .Include(r => r.ApplicationUser)
+            .Include(r => r.Seat)
+            .ThenInclude(s => s.SubArea)
+            .ThenInclude(sa => sa.Venue)
+            .Where(r => r.UserId == id) 
+            .ToListAsync();
 
         res = FilterRes(sortOrder, res);
         return View(res);
     }
+    
 
     public List<Reservation> FilterRes(string sortOrder, List<Reservation> res)
     {
