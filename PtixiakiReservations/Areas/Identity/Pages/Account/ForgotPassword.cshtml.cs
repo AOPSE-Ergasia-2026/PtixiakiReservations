@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using PtixiakiReservations.Models;
+using PtixiakiReservations.Services;
 
 namespace PtixiakiReservations.Areas.Identity.Pages.Account
 {
@@ -18,12 +19,12 @@ namespace PtixiakiReservations.Areas.Identity.Pages.Account
     public class ForgotPasswordModel : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IEmailSender _emailSender;
+        private readonly IEmailService _emailService;
 
-        public ForgotPasswordModel(UserManager<ApplicationUser> userManager, IEmailSender emailSender)
+        public ForgotPasswordModel(UserManager<ApplicationUser> userManager, IEmailService emailService)
         {
             _userManager = userManager;
-            _emailSender = emailSender;
+            _emailService = emailService;
         }
 
         [BindProperty]
@@ -46,13 +47,28 @@ namespace PtixiakiReservations.Areas.Identity.Pages.Account
             // 1. Generate 2FA Code
             var code = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
 
-            // 2. Print to Terminal (Debug)
-            Console.WriteLine($"\n2FA RESET CODE: {code}\n");
+            string subject = "Your EventSphere Security Code";
+            string message = $@"
+                <div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>
+                    <h2>Security Verification</h2>
+                    <p>You requested a verification code.</p>
+                    <p>Your code is: <strong style='font-size: 24px; color: #4F46E5;'>{code}</strong></p>
+                    <p style='font-size: 12px; color: #666;'>If you did not request this code, please ignore this email.</p>
+                </div>";
 
-            // 3. Save the email so the next page knows who we are verifying
-            TempData["ResetEmail"] = Input.Email;
-
-            return RedirectToPage("./ResetPasswordWith2fa");
+            try
+            {
+                await _emailService.SendEmailAsync(user.Email, subject, message);
+                TempData["ResetEmail"] = Input.Email;
+                return RedirectToPage("./ResetPasswordWith2fa");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"EMAIL ERROR: {ex.Message}");
+                
+                ModelState.AddModelError(string.Empty, "Failed to send verification email. Please try again later.");
+                return Page();
+            } 
         }
     }
 }

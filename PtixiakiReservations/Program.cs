@@ -119,6 +119,8 @@ try
     builder.Services.Configure<ElasticSettings>(builder.Configuration.GetSection("ElasticSettings"));
     builder.Services.AddSingleton<IElasticSearch, ElasticSearchService>();
 
+    builder.Services.AddTransient<IEmailService, EmailService>();
+
     // Add Event Generator Service
     builder.Services.AddScoped<IEventGeneratorService, EventGeneratorService>();
 
