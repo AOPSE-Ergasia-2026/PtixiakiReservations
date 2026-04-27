@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using PtixiakiReservations.Data;
 using PtixiakiReservations.Models;
 using PtixiakiReservations.Models.Requests;
+using PtixiakiReservations.Services;
 
 namespace PtixiakiReservations.Controllers;
 
@@ -18,7 +19,8 @@ namespace PtixiakiReservations.Controllers;
 public class ReservationController(
     ApplicationDbContext _context,
     UserManager<ApplicationUser> _userManager,
-    RoleManager<ApplicationRole> roleManager)
+    RoleManager<ApplicationRole> roleManager,
+    IEmailService _emailService)
     : Controller
 {
     private readonly RoleManager<ApplicationRole> _roleManager = roleManager;
@@ -173,38 +175,48 @@ public class ReservationController(
     {
         try
         {
-            // Validate that the event is not in the past
             var eventToReserve = await _context.Event.FindAsync(model.EventId);
+
             if (eventToReserve == null)
             {
                 return BadRequest("Event not found");
             }
 
-            // Ensure we're comparing dates in the same timezone
             var today = DateTime.Today;
 
-            // Check if the event date is in the past
             if (eventToReserve.StartDateTime.Date < today)
             {
                 return BadRequest("Cannot make reservations for past events");
             }
 
-            // Also verify the reservation date is not in the past
             if (model.ResDate.Date < today)
             {
                 return BadRequest("Cannot make reservations with a past date");
             }
 
-            // For multi-day events, the system creates separate Event records for each day
-            // So we should allow the ResDate to be used as-is from the frontend
-            // Only validate that it's within reasonable bounds of the event
-
-            // The ResDate should already contain the correct date and time from the frontend
-            // No need to override it unless there's a specific issue
-
-            // Continue with the existing logic to make the reservation
             var userId = _userManager.GetUserId(HttpContext.User);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
             var user = await _userManager.FindByIdAsync(userId);
+
+            if (model == null)
+            {
+                return BadRequest("Reservation model is null");
+            }
+
+            if (model.SeatIds == null || !model.SeatIds.Any())
+            {
+                return BadRequest("No seats selected");
+            }
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
 
             foreach (var seatId in model.SeatIds)
             {
@@ -217,16 +229,83 @@ public class ReservationController(
                     SeatId = seatId,
                     EventId = model.EventId
                 };
+
                 _context.Reservation.Add(res);
             }
 
             await _context.SaveChangesAsync();
+
+            // ================= EMAIL DATA =================
+
+            var seatIds = model.SeatIds.ToList();
+
+            var selectedSeatNames = await _context.Seat
+                .Where(s => seatIds.Contains(s.Id))
+                .Select(s => s.Name)
+                .ToListAsync();
+
+            var eventEntity = await _context.Event
+                .AsNoTracking()
+                .Include(e => e.Venue)
+                .ThenInclude(v => v.City)
+                .Include(e => e.SubArea)
+                .FirstOrDefaultAsync(e => e.Id == model.EventId);
+
+            var subject = "Reservation Confirmation";
+
+            var seatsText = string.Join(", ", selectedSeatNames);
+
+            var message = $@"
+            <div style='font-family:Arial;padding:20px;background:#f4f4f4;'>
+                <div style='background:white;padding:30px;border-radius:10px;max-width:700px;margin:auto;'>
+
+                    <h2 style='color:#2563eb;'>Reservation Confirmation</h2>
+
+                    <p>Hello {user.UserName},</p>
+
+                    <p>Your reservation has been completed successfully.</p>
+
+                    <hr/>
+
+                    <p><strong>Event:</strong> {eventEntity?.Name}</p>
+                    <p><strong>Venue:</strong> {eventEntity?.Venue?.Name}</p>
+                    <p><strong>City:</strong> {eventEntity?.Venue?.City?.Name}</p>
+                    <p><strong>Area:</strong> {eventEntity?.SubArea?.AreaName}</p>
+
+                    <p><strong>Date:</strong> {model.ResDate:dd/MM/yyyy}</p>
+                    <p><strong>Time:</strong> {model.ResDate:HH:mm}</p>
+                    <p><strong>Duration:</strong> {model.Duration}</p>
+
+                    <p><strong>Seats:</strong> {seatsText}</p>
+
+                    <br/>
+
+                    <p>Thank you for your reservation.</p>
+
+                </div>
+            </div>";
+
+            try
+            {
+                await _emailService.SendEmailAsync(
+                    user.Email,
+                    subject,
+                    message
+                );
+            }
+            catch
+            {
+                // Optional logging
+                // Δεν αποτυγχάνει το reservation αν αποτύχει το email
+            }
+
             return Ok();
         }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
         }
+
     }
 
     // GET: Reservations/Edit/5
