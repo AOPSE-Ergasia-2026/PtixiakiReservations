@@ -276,17 +276,11 @@
                                 }
                                 else
                                 {
-                                    <div class="flex justify-end space-x-3">
-                                        <a asp-action="Details" asp-route-id="@item.ID"
-                                        class="text-blue-600 hover:text-blue-900">
-                                            Details
-                                        </a>
-
-                                        <a asp-action="Delete" asp-route-id="@item.ID"
-                                        class="text-red-600 hover:text-red-900">
-                                            Delete
-                                        </a>
-                                    </div>
+                                        <div class="flex justify-end space-x-3">
+                                            <p class="text-green-600">
+                                                Upcoming
+                                            </p>
+                                        </div>
                                 }
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -303,7 +297,7 @@
                                     {
                                         <button onclick="openReviewModal(@item.ID)"
                                                 class="text-purple-600 hover:text-purple-800 font-medium">
-                                            Review
+                                            ★ Review
                                         </button>
                                     }
                                     <a asp-action="Delete" asp-route-id="@item.ID"
@@ -364,7 +358,7 @@
         </h2>
 
         <form asp-action="SaveReview" method="post"
-              onsubmit="showThankYouMessage()">
+              onsubmit="return showThankYouMessage(event)">
 
             <input type="hidden" id="reservationId" name="reservationId" />
 
@@ -380,19 +374,19 @@
                 <div class="flex gap-2 text-4xl cursor-pointer select-none">
 
                     <span onclick="setRating(1)" id="star1"
-                          class="text-yellow-400 hover:scale-110 transition">*</span>
+                          class="text-yellow-400 hover:scale-130 transition">★</span>
 
                     <span onclick="setRating(2)" id="star2"
-                          class="text-yellow-400 hover:scale-110 transition">*</span>
+                          class="text-yellow-400 hover:scale-130 transition">★</span>
 
                     <span onclick="setRating(3)" id="star3"
-                          class="text-yellow-400 hover:scale-110 transition">*</span>
+                          class="text-yellow-400 hover:scale-130 transition">★</span>
 
                     <span onclick="setRating(4)" id="star4"
-                          class="text-yellow-400 hover:scale-110 transition">*</span>
+                          class="text-yellow-400 hover:scale-130 transition">★</span>
 
                     <span onclick="setRating(5)" id="star5"
-                          class="text-yellow-400 hover:scale-110 transition">*</span>
+                          class="text-yellow-400 hover:scale-130 transition">★</span>
 
                 </div>
             </div>
@@ -411,11 +405,31 @@
 
             <!-- Button -->
             <button type="submit"
-                    class="w-full bg-blue-600 text-white py-4 rounded-2xl hover:bg-blue-700 transition duration-200 text-lg font-medium">
-                Save Review
+                    class="w-full bg-blue-600 text-white py-4 rounded-2xl hover:bg-blue-700 transition duration-200 text-lg font-medium"
+                    onclick="showThankYouMessage()">
+                Send Review
             </button>
 
         </form>
+    </div>
+</div>
+<div id="thankYouModal"
+     class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[60]">
+
+    <div class="bg-white rounded-3xl shadow-2xl w-[400px] p-8 text-center relative">
+
+        <h2 class="text-2xl font-bold text-green-600 mb-4">
+            Thank You!
+        </h2>
+
+        <p class="text-gray-600 mb-6">
+            Thanks for your review!
+        </p>
+
+        <button onclick="closeThankYouModal()"
+                class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition">
+            OK
+        </button>
     </div>
 </div>
 
@@ -507,10 +521,19 @@
         // Thank you popup
         // =========================
         function showThankYouMessage() {
+            event.preventDefault();
+
+            closeReviewModal();
 
             setTimeout(() => {
-                alert("Thanks for your review!");
+                document.getElementById("thankYouModal").classList.remove("hidden");
+                document.getElementById("thankYouModal").classList.add("flex");
             }, 300);
+        }
+
+        function closeThankYouModal() {
+            document.getElementById("thankYouModal").classList.add("hidden");
+            document.getElementById("thankYouModal").classList.remove("flex");
         }
 
         // =========================
