@@ -37,9 +37,23 @@ public class ReservationController(
         ViewData["EventSortParm"] = sortOrder == "Event" ? "Event_desc" : "Event";
 
         string id = _userManager.GetUserId(HttpContext.User);
-        
-        // Safety check: If they aren't logged in, send them away
-        if (string.IsNullOrEmpty(id)) return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+        if (string.IsNullOrEmpty(id))
+            return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+        // UPDATE PAST RESERVATIONS
+        var allReservations = await _context.Reservation.ToListAsync();
+
+        foreach (var reservation in allReservations)
+        {
+            if (!reservation.IsPastReservation &&
+                reservation.Date.Add(reservation.Duration) < DateTime.Now)
+            {
+                reservation.IsPastReservation = true;
+            }
+        }
+
+        await _context.SaveChangesAsync();
 
         var user = await _userManager.FindByIdAsync(id);
         var roles = await _userManager.GetRolesAsync(user);
@@ -52,10 +66,11 @@ public class ReservationController(
             .Include(r => r.Seat)
             .ThenInclude(s => s.SubArea)
             .ThenInclude(sa => sa.Venue)
-            .Where(r => r.UserId == id) 
+            .Where(r => r.UserId == id)
             .ToListAsync();
 
         res = FilterRes(sortOrder, res);
+
         return View(res);
     }
     
@@ -455,8 +470,73 @@ public class ReservationController(
         return View();
     }
 
-    private bool ReservationsExists(int id)
+    [HttpPost]
+    public async Task<IActionResult> SubmitReview(int reservationId, bool attended, string review, int rating)
     {
-        return _context.Reservation.Any(e => e.ID == id);
+        var reservation = await _context.Reservation
+            .FirstOrDefaultAsync(r => r.ID == reservationId);
+
+        if (reservation != null)
+        {
+            reservation.Attended = attended;
+
+            if (attended)
+            {
+                reservation.Review = review;
+                reservation.Rating = rating;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Index));
     }
+
+    [HttpPost]
+    public async Task<IActionResult> SaveReview(int reservationId, string review, int rating)
+    {
+        var userId = _userManager.GetUserId(User);
+
+        var reservation = await _context.Reservation
+            .FirstOrDefaultAsync(r => r.ID == reservationId && r.UserId == userId);
+
+        if (reservation == null)
+            return NotFound();
+
+        if (reservation.Attended != true)
+        {
+            return BadRequest();
+        }
+
+        reservation.Review = review;
+        reservation.Rating = rating;
+
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> MarkAttendance(int reservationId, bool attended)
+    {
+        var userId = _userManager.GetUserId(User);
+
+        var reservation = await _context.Reservation
+            .FirstOrDefaultAsync(r => r.ID == reservationId && r.UserId == userId);
+
+        if (reservation == null)
+            return NotFound();
+
+        reservation.Attended = attended;
+
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index");
+    }
+
+    private bool ReservationsExists(int id) 
+    { 
+        return _context.Reservation.Any(e => e.ID == id); 
+    }
+
 }
