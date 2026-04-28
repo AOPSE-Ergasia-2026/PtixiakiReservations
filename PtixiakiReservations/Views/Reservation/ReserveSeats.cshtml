@@ -94,7 +94,7 @@
                                 <div class="flex items-center">
                                     <input type="checkbox" id="useEventStartTime" class="h-4 w-4 text-blue-600 border-gray-300 rounded" checked>
                                     <label for="useEventStartTime" class="ml-2 text-sm text-gray-700">From Start</label>
-                                </div>
+                                </div> 
                             </div>
                         </div>
 
@@ -301,30 +301,32 @@
         $(document).ready(function () {
             // Handle checkbox states for time inputs
             $("#useEventStartTime").on("change", function() {
+                //Removed checking logic
                 if ($(this).is(':checked')) {
                     $("#reservationStartTime").val('@Model.StartDateTime.ToString("HH:mm")');
-                    $("#reservationStartTime").prop('disabled', true);
-                } else {
-                    $("#reservationStartTime").prop('disabled', false);
+                     $("#reservationStartTime").prop('disabled', true);
+                 } else {
+                     $("#reservationStartTime").prop('disabled', false);
                 }
             });
 
             $("#useEventEndTime").on("change", function() {
-                if ($(this).is(':checked')) {
-                    $("#reservationEndTime").val('@Model.EndTime.ToString("HH:mm")');
-                    $("#reservationEndTime").prop('disabled', true);
-                } else {
-                    $("#reservationEndTime").prop('disabled', false);
+                //Removed checking logic
+                 if ($(this).is(':checked')) {
+                     $("#reservationEndTime").val('@Model.EndTime.ToString("HH:mm")');
+                     $("#reservationEndTime").prop('disabled', true);
+                 } else {
+                     $("#reservationEndTime").prop('disabled', false);
                 }
             });
 
             // Initial state
             if ($("#useEventStartTime").is(':checked')) {
-                $("#reservationStartTime").prop('disabled', true);
+                 $("#reservationStartTime").prop('disabled', true);
             }
 
             if ($("#useEventEndTime").is(':checked')) {
-                $("#reservationEndTime").prop('disabled', true);
+                 $("#reservationEndTime").prop('disabled', true);
             }
 
             // Handle confirm button click
