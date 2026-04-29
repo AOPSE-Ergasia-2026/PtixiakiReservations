@@ -51,6 +51,9 @@
                             var userRoles = currentUser != null ? await UserManager.GetRolesAsync(currentUser) : new List<string>();
                             var isVenueManager = userRoles.Contains("Venue");
                             var isAdmin = userRoles.Contains("Admin");
+                            var isSuper = userRoles.Contains("SuperOrganizer");
+                            var isEventManager = userRoles.Contains("Event");
+
                         }
 
                         <!-- Home link - visible to all users -->
@@ -58,23 +61,22 @@
                            class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                             Home
                         </a>
-
-                        <!-- Venue manager links - only visible to venue managers -->
-                        @if (isVenueManager || isAdmin)
+                        
+                        @if (isEventManager|| isAdmin || isSuper)
                         {
                             <a href="@Url.Action("Index", "Events")"
                                class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                                 Events
                             </a>
-                            
-                            @if (isVenueManager)
+                        }
+                            @if (isVenueManager|| isAdmin || isSuper)
                             {
                                 <a href="@Url.Action("MyVenues", "Venue")"
                                    class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                                     Venues
                                 </a>
                             }
-                        }
+                        
                     </div>
                 </div>
 

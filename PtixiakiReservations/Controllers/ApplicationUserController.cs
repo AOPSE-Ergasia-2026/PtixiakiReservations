@@ -69,23 +69,35 @@ namespace PtixiakiReservations.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ChangeRoleAction(String id, String Role)
+        public async Task<IActionResult> ChangeRoleAction(string id, string Role)
         {
-            IdentityResult result;
             var user = await _userManager.FindByIdAsync(id);
-            var flag = await _userManager.IsInRoleAsync(user, Role);
-            if (!flag)
-            {
-                result = await _userManager.AddToRoleAsync(user, Role);
-            }
-            else
-            {
-                result = await _userManager.RemoveFromRoleAsync(user, Role);
-            }
-
-            if (!result.Succeeded)
+            if (user == null)
             {
                 return NotFound();
+            }
+
+
+            bool alreadyHasRole = await _userManager.IsInRoleAsync(user, Role);
+
+            // 3. Wipe the slate clean (remove all current roles)
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (currentRoles.Any())
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                if (!removeResult.Succeeded)
+                {
+                    return BadRequest("Failed to remove existing roles.");
+                }
+            }
+
+            string roleToAssign = alreadyHasRole ? "User" : Role;
+
+            // 5. Apply the new role
+            var addResult = await _userManager.AddToRoleAsync(user, roleToAssign);
+            if (!addResult.Succeeded)
+            {
+                return BadRequest($"Failed to assign the {roleToAssign} role.");
             }
 
             await _context.SaveChangesAsync();

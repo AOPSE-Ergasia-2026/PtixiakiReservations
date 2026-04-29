@@ -7,7 +7,7 @@
     ViewData["Title"] = "Venue Sub Areas";
     var currentUser = await UserManager.GetUserAsync(User);
     var userRoles = await UserManager.GetRolesAsync(currentUser);
-    bool canCreateSubAreas = User.IsInRole("Venue");
+    bool canCreateSubAreas = User.IsInRole("Venue") || User.IsInRole("SuperOrganizer") || User.IsInRole("Admin");
     
     // Check if current user owns this venue (you might need to pass venue info or check via AJAX)
     bool userOwnsVenue = true; // This would need proper implementation based on your venue ownership logic

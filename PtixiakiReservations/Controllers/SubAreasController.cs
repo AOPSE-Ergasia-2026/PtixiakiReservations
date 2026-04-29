@@ -23,7 +23,7 @@ namespace PtixiakiReservations.Controllers
             _usermanager = usermanager;
         }
 
-        [Authorize(Roles = "Venue")]
+        [Authorize(Roles = "Venue,Admin,SuperOrganizer")]
         public async Task<IActionResult> Index()
         {
             var subAreas = await _context.SubArea
@@ -80,7 +80,7 @@ namespace PtixiakiReservations.Controllers
         }
 
         // GET: SubAreas/Create
-        [Authorize(Roles = "Venue,Admin")]
+        [Authorize(Roles = "Venue,Admin,SuperOrganizer")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] JsonSubAreaModel[] subareas)
         {
