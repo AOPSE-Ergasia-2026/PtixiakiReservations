@@ -316,7 +316,6 @@ public class EventsController(
 
             // Fetch the venues associated with the current user
             var venues = await context.Venue
-                .Where(v => v.UserId == userId)
                 .Select(v => new SelectListItem
                 {
                     Value = v.Id.ToString(),
@@ -412,11 +411,11 @@ public class EventsController(
             }
 
             // 3. Verify venue belongs to the current user
-            var venue = await context.Venue.FirstOrDefaultAsync(v => v.Id == newEvent.VenueId && v.UserId == userId);
+            var venue = await context.Venue.FirstOrDefaultAsync(v => v.Id == newEvent.VenueId);
             if (venue == null)
             {
-                logger.LogWarning("User {UserId} unauthorized for venue {VenueId}", userId, newEvent.VenueId);
-                ModelState.AddModelError("VenueId", "You can only create events for venues you own.");
+                logger.LogWarning("Venue {VenueId} not found", newEvent.VenueId);
+                ModelState.AddModelError("VenueId", "The selected venue does not exist.");
                 await ReloadCreateDropdowns(userId);
                 return View(newEvent);
             }
@@ -512,7 +511,6 @@ public class EventsController(
 private async Task ReloadCreateDropdowns(string userId)
 {
     ViewBag.VenueList = await context.Venue
-        .Where(v => v.UserId == userId)
         .Select(v => new SelectListItem { Value = v.Id.ToString(), Text = v.Name })
         .ToListAsync();
 
@@ -914,7 +912,6 @@ private async Task ReloadCreateDropdowns(string userId)
         var events = await context.Event
             .Include(e => e.EventType)
             .Include(e => e.Venue)
-            .Where(e => e.Venue.UserId == userId)
             .OrderByDescending(e => e.StartDateTime)
             .Select(e => new {
                 e.Id,

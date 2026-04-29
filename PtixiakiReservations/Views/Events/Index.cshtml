@@ -1,6 +1,13 @@
 ﻿@model IEnumerable<PtixiakiReservations.Models.Event>
+@using Microsoft.AspNetCore.Identity
+@using PtixiakiReservations.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
 @{
     ViewBag.Title = "My Events";
+    var currentUser = await UserManager.GetUserAsync(User);
+    var userRoles = await UserManager.GetRolesAsync(currentUser);
+    bool isAdmin = User.IsInRole("Admin");
 }
 
 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
@@ -120,9 +127,12 @@
             <!-- Event details will be populated here -->
         </div>
         <div class="bg-gray-100 border-t border-gray-200 px-6 py-4 flex justify-end space-x-4 rounded-b-lg">
-            <a id="modal-edit-link" href="#" class="px-4 py-2 bg-indigo-500 text-white rounded shadow hover:bg-indigo-700 transition-colors">
+            @if (isAdmin) {
+                <a id="modal-edit-link" href="#" class="px-4 py-2 bg-indigo-500 text-white rounded shadow hover:bg-indigo-700 transition-colors">
                 Edit Event
             </a>
+            }
+
             <button onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">
                 Close
             </button>
@@ -259,9 +269,6 @@
                             <button onclick="showEventDetails(${event.id})" class="text-indigo-600 hover:text-indigo-900 mr-3">
                                 View
                             </button>
-                            <a href="/Events/Edit/${event.id}" class="text-indigo-600 hover:text-indigo-900 mr-3">
-                                Edit
-                            </a>
                             <a href="/Events/Details/${event.id}" class="text-indigo-600 hover:text-indigo-900">
                                 Details
                             </a>

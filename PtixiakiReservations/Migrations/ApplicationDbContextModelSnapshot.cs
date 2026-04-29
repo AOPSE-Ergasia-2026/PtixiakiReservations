@@ -189,8 +189,23 @@ namespace PtixiakiReservations.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("EventManagerRequestDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("EventManagerRequestReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EventManagerRequestStatus")
+                        .HasColumnType("text");
+
                     b.Property<string>("FirstName")
                         .HasColumnType("text");
+
+                    b.Property<bool>("HasRequestedEventManagerRole")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasRequestedSuperOrganizerRole")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("HasRequestedVenueManagerRole")
                         .HasColumnType("boolean");
@@ -225,6 +240,15 @@ namespace PtixiakiReservations.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("SuperOrganizerRequestDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("SuperOrganizerRequestReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SuperOrganizerRequestStatus")
                         .HasColumnType("text");
 
                     b.Property<bool>("TwoFactorEnabled")

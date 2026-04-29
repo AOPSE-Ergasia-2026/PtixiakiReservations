@@ -69,7 +69,7 @@ public class DataSeeder
     private static async Task SeedUsers(UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager)
     {
-        string[] roleNames = { "Admin", "User", "Manager", "Venue" };
+        string[] roleNames = { "Admin", "User", "Venue" };
         foreach (var roleName in roleNames)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
