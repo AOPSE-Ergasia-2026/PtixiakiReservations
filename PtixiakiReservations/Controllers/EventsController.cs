@@ -375,11 +375,9 @@ public class EventsController(
         {
             try
             {
-                // Define path: wwwroot/uploads/events
                 string uploadsFolder = Path.Combine(environment.WebRootPath, "images/events");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-                // Generate unique filename to prevent collisions
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(imageFile.FileName);
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
@@ -388,13 +386,13 @@ public class EventsController(
                     await imageFile.CopyToAsync(fileStream);
                 }
 
-                // Set the relative path on the model
                 newEvent.ImagePath = "/images/events/" + uniqueFileName;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error saving event image to disk.");
-                ModelState.AddModelError("", "There was an error saving the image file.");
+                // Returning BadRequest so the fetch API knows it failed
+                return BadRequest(new { success = false, message = "Error saving image." });
             }
         }
 
@@ -406,8 +404,7 @@ public class EventsController(
             if (!ModelState.IsValid)
             {
                 logger.LogWarning("Model state is invalid.");
-                await ReloadCreateDropdowns(userId);
-                return View(newEvent);
+                return BadRequest(new { success = false, message = "Invalid form data." });
             }
 
             // 3. Verify venue belongs to the current user
@@ -415,10 +412,12 @@ public class EventsController(
             if (venue == null)
             {
                 logger.LogWarning("Venue {VenueId} not found", newEvent.VenueId);
-                ModelState.AddModelError("VenueId", "The selected venue does not exist.");
-                await ReloadCreateDropdowns(userId);
-                return View(newEvent);
+                return BadRequest(new { success = false, message = "Venue does not exist." });
             }
+
+            // Variable to hold our newly created Father event, declared out here 
+            // so we can grab its ID at the very end of the function!
+            Event fatherEvent = null;
 
             // 4. Handle Save Logic
             if (isMultiDay && !string.IsNullOrEmpty(StartDate) && !string.IsNullOrEmpty(EndDate)
@@ -429,15 +428,9 @@ public class EventsController(
                 DateTime startDate = DateTime.Parse(StartDate);
                 DateTime endDate = DateTime.Parse(EndDate);
                 
-                // Extract Time portion
                 TimeSpan startTimeSpan = DateTime.TryParse(StartTime, out DateTime pst) ? pst.TimeOfDay : TimeSpan.Parse(StartTime);
                 TimeSpan endTimeSpan = DateTime.TryParse(EndTime, out DateTime pet) ? pet.TimeOfDay : TimeSpan.Parse(EndTime);
 
-                // Loop through each day
-                // Variable to hold our newly created Father event
-                Event fatherEvent = null;
-
-                // Loop through each day
                 for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
                 {
                     var eventForDay = new Event
@@ -451,29 +444,25 @@ public class EventsController(
                         ImagePath = newEvent.ImagePath 
                     };
 
-                    // SCENARIO A: The user selected an existing parent from a dropdown. 
-                    // Make all of these days children of that existing parent.
+                    // SCENARIO A: Existing parent selected
                     if (newEvent.ParentEventId.HasValue)
                     {
                         eventForDay.ParentEventId = newEvent.ParentEventId;
                         context.Add(eventForDay);
                     }
-                    // SCENARIO B: No parent was selected. Make the first day the Father, and the rest its children.
+                    // SCENARIO B: No parent selected (Make first day the Master)
                     else 
                     {
                         if (fatherEvent == null)
                         {
-                            eventForDay.ParentEventId = null; // <--- The Father is explicitly null
+                            eventForDay.ParentEventId = null; 
                             context.Add(eventForDay);
                             
-                            // We MUST save the Father immediately so PostgreSQL generates its ID
                             await context.SaveChangesAsync(); 
-                            
-                            fatherEvent = eventForDay; // Store it for the next loops
+                            fatherEvent = eventForDay; 
                         }
                         else
                         {
-                            // The next days point to the Father's brand new ID
                             eventForDay.ParentEventId = fatherEvent.Id; 
                             context.Add(eventForDay);
                         }
@@ -491,19 +480,42 @@ public class EventsController(
                 if (newEvent.EndTime == DateTime.MinValue)
                     newEvent.EndTime = newEvent.StartDateTime.AddHours(2);
 
-                // newEvent already has the ImagePath set from the upload block above
                 context.Add(newEvent);
             }
 
+            // Save everything to the database
             await context.SaveChangesAsync();
-            return RedirectToAction("Index");
+
+            // 5. DETERMINE WHAT ID TO SEND BACK TO JAVASCRIPT
+            int? returnedEventId = newEvent.ParentEventId; 
+
+            // If ParentEventId is null, they just created a brand new Master Event!
+            if (returnedEventId == null)
+            {
+                // If they did a multi-day master event, the ID we want is the fatherEvent
+                if (isMultiDay && fatherEvent != null)
+                {
+                    returnedEventId = fatherEvent.Id;
+                }
+                else // If they did a single day master event, the ID is just the newEvent
+                {
+                    returnedEventId = newEvent.Id;
+                }
+            }
+
+            // Return the JSON data so the JavaScript can automatically switch to Sub-Event Mode
+            return Json(new { 
+            success = true, 
+            eventId = returnedEventId, 
+            eventName = newEvent.Name,
+            venueId = newEvent.VenueId,
+            eventTypeId = newEvent.EventTypeId
+        });
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating event");
-            await ReloadCreateDropdowns(userId);
-            ModelState.AddModelError("", "An error occurred while creating the event. Please try again.");
-            return View(newEvent);
+            return BadRequest(new { success = false, message = "An error occurred while creating the event." });
         }
     }
 
@@ -735,7 +747,9 @@ private async Task ReloadCreateDropdowns(string userId)
                     e.EndTime,
                     ImagePath = e.ImagePath ?? e.ParentEvent.ImagePath,
                     VenueName = e.Venue.Name,
-                    CityName = e.Venue.City != null ? e.Venue.City.Name : "N/A"
+                    CityName = e.Venue.City != null ? e.Venue.City.Name : "N/A",
+                    parentEventId = e.ParentEventId,
+                    childCount = context.Event.Count(c => c.ParentEventId == e.Id)
                 })
                 .ToListAsync();
 

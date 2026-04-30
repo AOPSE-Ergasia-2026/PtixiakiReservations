@@ -69,13 +69,13 @@
                                 Events
                             </a>
                         }
-                            @if (isVenueManager|| isAdmin || isSuper)
-                            {
-                                <a href="@Url.Action("MyVenues", "Venue")"
-                                   class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                                    Venues
-                                </a>
-                            }
+                        @if (isVenueManager|| isAdmin || isSuper)
+                        {
+                            <a href="@Url.Action("MyVenues", "Venue")"
+                                class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                                Venues
+                            </a>
+                        }
                         
                     </div>
                 </div>
@@ -128,11 +128,11 @@
                             </div>
 
                             <!-- Menu Links -->
-                            <a href="@Url.Action("Index", "Profile")" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">Your Profile</a>
+                            <a href="@Url.Action("Index", "Profile")" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">My Profile</a>
                             @* <a href="@Url.Action("Index", "Settings")" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">Settings</a> *@
 
                             <!-- Reservations Link -->
-                            <a href="@Url.Action("Index", "Reservation")" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Reservations</a>
+                            <a href="@Url.Action("Index", "Reservation")" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">My Reservations</a>
 
 
                             <!-- Admin Panel Link - Only visible to admins -->

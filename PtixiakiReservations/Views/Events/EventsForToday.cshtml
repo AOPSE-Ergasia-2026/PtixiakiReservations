@@ -142,8 +142,12 @@
                         </div>
                     }
                     <div class="flex justify-between items-center border-t pt-4">
+                        @{
+                            int childCount = Model.Count(e => e.ParentEventId == item.Id);
+                        }
+                        
                         <a asp-action="ChildEvents" asp-route-id="@item.Id" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-                            View Sub Events →
+                            View Sub Events (@childCount) →
                         </a>
                         <a href="@Url.Action("Details", "Events", new { id = item.Id })" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
                             View Details →
@@ -715,15 +719,19 @@
                         });
 
                         function buildEventCard(event, timeClass) {
+                            // 1. Calculate dates and times (This is probably what got deleted!)
                             const startDate = new Date(event.startDateTime);
                             const endDate = new Date(event.endTime);
                             
-                            // Format safely
                             const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
                             const timeStr = `${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 
                             const hasImage = event.imagePath && event.imagePath.trim() !== "";
 
+                            // 2. Check if it's a Master Event
+                            const isMasterEvent = event.parentEventId == null && event.ParentEventId == null;
+
+                            // 3. Return the HTML Card
                             return `
                             <div class="event-card ${timeClass} rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
                                 <div class="p-5 flex flex-col h-full">
@@ -735,6 +743,7 @@
                                     </div>
                                     
                                     <div class="event-content flex-grow">
+                                        <!-- Title -->
                                         <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">${event.name || 'Unnamed Event'}</h3>
                                         
                                         <div class="flex items-start mb-3">
@@ -759,10 +768,15 @@
                                         </div>
                                     </div>
 
-                                    <div class="event-footer flex justify-between items-center border-t pt-4">
-                                        <a href="/Events/ChildEvents/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-                                            View Sub Events →
-                                        </a>
+                                    <!-- Dynamic Alignment: 'justify-between' for Master, 'justify-end' for Child -->
+                                    <div class="event-footer flex ${isMasterEvent ? 'justify-between' : 'justify-end'} items-center border-t pt-4">
+                                        
+                                        ${isMasterEvent ? `
+                                            <a href="/Events/ChildEvents/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                                View Sub Events (${event.childCount || 0}) →
+                                            </a>
+                                        ` : ''}
+
                                         <a href="/Events/Details/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
                                             View Details →
                                         </a>
@@ -770,6 +784,7 @@
                                 </div>
                             </div>`;
                         }
+                        
 
                         container.removeClass('hidden');
                         updatePagination(data.totalPages > 1);
