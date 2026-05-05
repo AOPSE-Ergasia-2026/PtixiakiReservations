@@ -254,6 +254,7 @@ public class EventsController(
 
         var eventDetails = await context.Event
             .Include(e => e.Venue)
+            .Include(e => e.ParentEvent) 
             .Include(e => e.Venue.City)
             .Include(e => e.EventType)
             .FirstOrDefaultAsync(m => m.Id == id);
@@ -315,7 +316,6 @@ public class EventsController(
 
             // Fetch the venues associated with the current user
             var venues = await context.Venue
-                .Where(v => v.UserId == userId)
                 .Select(v => new SelectListItem
                 {
                     Value = v.Id.ToString(),
@@ -375,11 +375,9 @@ public class EventsController(
         {
             try
             {
-                // Define path: wwwroot/uploads/events
                 string uploadsFolder = Path.Combine(environment.WebRootPath, "images/events");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-                // Generate unique filename to prevent collisions
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(imageFile.FileName);
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
@@ -388,13 +386,13 @@ public class EventsController(
                     await imageFile.CopyToAsync(fileStream);
                 }
 
-                // Set the relative path on the model
                 newEvent.ImagePath = "/images/events/" + uniqueFileName;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error saving event image to disk.");
-                ModelState.AddModelError("", "There was an error saving the image file.");
+                // Returning BadRequest so the fetch API knows it failed
+                return BadRequest(new { success = false, message = "Error saving image." });
             }
         }
 
@@ -406,19 +404,20 @@ public class EventsController(
             if (!ModelState.IsValid)
             {
                 logger.LogWarning("Model state is invalid.");
-                await ReloadCreateDropdowns(userId);
-                return View(newEvent);
+                return BadRequest(new { success = false, message = "Invalid form data." });
             }
 
             // 3. Verify venue belongs to the current user
-            var venue = await context.Venue.FirstOrDefaultAsync(v => v.Id == newEvent.VenueId && v.UserId == userId);
+            var venue = await context.Venue.FirstOrDefaultAsync(v => v.Id == newEvent.VenueId);
             if (venue == null)
             {
-                logger.LogWarning("User {UserId} unauthorized for venue {VenueId}", userId, newEvent.VenueId);
-                ModelState.AddModelError("VenueId", "You can only create events for venues you own.");
-                await ReloadCreateDropdowns(userId);
-                return View(newEvent);
+                logger.LogWarning("Venue {VenueId} not found", newEvent.VenueId);
+                return BadRequest(new { success = false, message = "Venue does not exist." });
             }
+
+            // Variable to hold our newly created Father event, declared out here 
+            // so we can grab its ID at the very end of the function!
+            Event fatherEvent = null;
 
             // 4. Handle Save Logic
             if (isMultiDay && !string.IsNullOrEmpty(StartDate) && !string.IsNullOrEmpty(EndDate)
@@ -429,11 +428,9 @@ public class EventsController(
                 DateTime startDate = DateTime.Parse(StartDate);
                 DateTime endDate = DateTime.Parse(EndDate);
                 
-                // Extract Time portion
                 TimeSpan startTimeSpan = DateTime.TryParse(StartTime, out DateTime pst) ? pst.TimeOfDay : TimeSpan.Parse(StartTime);
                 TimeSpan endTimeSpan = DateTime.TryParse(EndTime, out DateTime pet) ? pet.TimeOfDay : TimeSpan.Parse(EndTime);
 
-                // Loop through each day
                 for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
                 {
                     var eventForDay = new Event
@@ -444,11 +441,32 @@ public class EventsController(
                         SubAreaId = newEvent.SubAreaId,
                         StartDateTime = date.Add(startTimeSpan),
                         EndTime = date.Add(endTimeSpan),
-                        FamilyEventId = newEvent.FamilyEventId,
                         ImagePath = newEvent.ImagePath 
                     };
 
-                    context.Add(eventForDay);
+                    // SCENARIO A: Existing parent selected
+                    if (newEvent.ParentEventId.HasValue)
+                    {
+                        eventForDay.ParentEventId = newEvent.ParentEventId;
+                        context.Add(eventForDay);
+                    }
+                    // SCENARIO B: No parent selected (Make first day the Master)
+                    else 
+                    {
+                        if (fatherEvent == null)
+                        {
+                            eventForDay.ParentEventId = null; 
+                            context.Add(eventForDay);
+                            
+                            await context.SaveChangesAsync(); 
+                            fatherEvent = eventForDay; 
+                        }
+                        else
+                        {
+                            eventForDay.ParentEventId = fatherEvent.Id; 
+                            context.Add(eventForDay);
+                        }
+                    }
                 }
             }
             else
@@ -462,19 +480,42 @@ public class EventsController(
                 if (newEvent.EndTime == DateTime.MinValue)
                     newEvent.EndTime = newEvent.StartDateTime.AddHours(2);
 
-                // newEvent already has the ImagePath set from the upload block above
                 context.Add(newEvent);
             }
 
+            // Save everything to the database
             await context.SaveChangesAsync();
-            return RedirectToAction("Index");
+
+            // 5. DETERMINE WHAT ID TO SEND BACK TO JAVASCRIPT
+            int? returnedEventId = newEvent.ParentEventId; 
+
+            // If ParentEventId is null, they just created a brand new Master Event!
+            if (returnedEventId == null)
+            {
+                // If they did a multi-day master event, the ID we want is the fatherEvent
+                if (isMultiDay && fatherEvent != null)
+                {
+                    returnedEventId = fatherEvent.Id;
+                }
+                else // If they did a single day master event, the ID is just the newEvent
+                {
+                    returnedEventId = newEvent.Id;
+                }
+            }
+
+            // Return the JSON data so the JavaScript can automatically switch to Sub-Event Mode
+            return Json(new { 
+            success = true, 
+            eventId = returnedEventId, 
+            eventName = newEvent.Name,
+            venueId = newEvent.VenueId,
+            eventTypeId = newEvent.EventTypeId
+        });
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating event");
-            await ReloadCreateDropdowns(userId);
-            ModelState.AddModelError("", "An error occurred while creating the event. Please try again.");
-            return View(newEvent);
+            return BadRequest(new { success = false, message = "An error occurred while creating the event." });
         }
     }
 
@@ -482,7 +523,6 @@ public class EventsController(
 private async Task ReloadCreateDropdowns(string userId)
 {
     ViewBag.VenueList = await context.Venue
-        .Where(v => v.UserId == userId)
         .Select(v => new SelectListItem { Value = v.Id.ToString(), Text = v.Name })
         .ToListAsync();
 
@@ -534,10 +574,11 @@ private async Task ReloadCreateDropdowns(string userId)
         }
 
         var ev = await context.Event
-            .Include(r => r.FamilyEvent)
+            .Include(r => r.ParentEvent) 
             .Include(r => r.Venue)
             .Include(r => r.EventType)
             .FirstOrDefaultAsync(m => m.Id == id);
+            
         if (ev == null)
         {
             return NotFound();
@@ -545,15 +586,23 @@ private async Task ReloadCreateDropdowns(string userId)
 
         if (dAll == true)
         {
-            var familyEvents = context.Event.Include(r => r.FamilyEvent).Include(r => r.EventType)
-                .Where(e => e.FamilyEventId == ev.FamilyEventId).ToList();
-            foreach (var @event in familyEvents)
+            // Figure out the parent ID (if ev IS the parent, use its own Id)
+            var targetParentId = ev.ParentEventId ?? ev.Id;
+
+            // Grab the parent and all its children
+            var relatedEvents = context.Event
+                .Include(r => r.ParentEvent)
+                .Include(r => r.EventType)
+                .Where(e => e.Id == targetParentId || e.ParentEventId == targetParentId)
+                .ToList();
+
+            foreach (var @event in relatedEvents)
             {
                 var hasReservations = context.Reservation.Where(r => r.EventId == @event.Id).ToList();
                 context.Reservation.RemoveRange(hasReservations);
             }
 
-            context.Event.RemoveRange(familyEvents);
+            context.Event.RemoveRange(relatedEvents);
         }
         else
         {
@@ -566,7 +615,6 @@ private async Task ReloadCreateDropdowns(string userId)
         Response.StatusCode = (int)HttpStatusCode.OK;
         return Json(Response.StatusCode);
     }
-
     private bool EventExists(int id)
     {
         return context.Event.Any(e => e.Id == id);
@@ -638,11 +686,20 @@ private async Task ReloadCreateDropdowns(string userId)
                 parsedEndDate = endDateValue.Date.AddDays(1).AddSeconds(-1);
             }
 
-            // Use standard database query for better date filtering
+            // Determine if the user is filtering by date
+            bool hasDateFilter = !string.IsNullOrWhiteSpace(startDate) || !string.IsNullOrWhiteSpace(endDate);
+
+            // Use standard database query
             var query = context.Event
                 .Include(e => e.Venue)
                 .ThenInclude(v => v.City)
                 .AsQueryable();
+
+            // ONLY apply the Parent-only filter if NO date filter was provided
+            if (!hasDateFilter)
+            {
+                query = query.Where(e => e.ParentEventId == null);
+            }
 
             // Apply filters based on provided criteria
             if (!string.IsNullOrWhiteSpace(eventTypeId) && int.TryParse(eventTypeId, out int eventTypeIdValue))
@@ -682,12 +739,24 @@ private async Task ReloadCreateDropdowns(string userId)
             var events = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(e => new
+                {
+                    e.Id,
+                    e.Name,
+                    e.StartDateTime,
+                    e.EndTime,
+                    ImagePath = e.ImagePath ?? e.ParentEvent.ImagePath,
+                    VenueName = e.Venue.Name,
+                    CityName = e.Venue.City != null ? e.Venue.City.Name : "N/A",
+                    parentEventId = e.ParentEventId,
+                    childCount = context.Event.Count(c => c.ParentEventId == e.Id)
+                })
                 .ToListAsync();
 
             // Return results as JSON
             return Json(new
             {
-                events,
+                events, // This now contains the projected objects with the ImagePath
                 totalCount,
                 currentPage = page,
                 totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
@@ -852,18 +921,22 @@ private async Task ReloadCreateDropdowns(string userId)
     [HttpGet]
     public async Task<IActionResult> GetUserEvents()
     {
-        // Get the current user ID
         var userId = userManager.GetUserId(User);
 
-        // Get all events created by the user
         var events = await context.Event
             .Include(e => e.EventType)
             .Include(e => e.Venue)
-            .Where(e => e.Venue.UserId == userId)
             .OrderByDescending(e => e.StartDateTime)
+            .Select(e => new {
+                e.Id,
+                e.Name,
+                e.StartDateTime,
+                e.EndTime,
+                EventType = new { e.EventType.Name },
+                Venue = new { e.Venue.Name },
+                // Add other fields you need for your JS here
+            })
             .ToListAsync();
-
-        logger.LogInformation("Found {Count} events for user {UserId}", events.Count, userId);
 
         return Json(events);
     }
@@ -1178,5 +1251,107 @@ private async Task ReloadCreateDropdowns(string userId)
             }).ToListAsync();
 
         return View(updatedEvent);
+    }
+    [Authorize] 
+    [HttpGet]
+    [HttpGet]
+    public async Task<IActionResult> SearchParentEvents(string query)
+    {
+        var events = await context.Event
+            .Where(e => e.ParentEventId == null && e.Name.Contains(query))
+            .Select(e => new {
+                id = e.Id,
+                name = e.Name,
+                venue = e.Venue.Name,
+                venueId = e.VenueId, // Necessary for inheritance
+                rawStartDate = e.StartDateTime.ToString("yyyy-MM-ddTHH:mm"),
+                rawEndDate = e.EndTime.ToString("yyyy-MM-ddTHH:mm"),
+                date = e.StartDateTime.ToString("MMM dd, yyyy")
+            })
+            .Take(5)
+            .ToListAsync();
+        return Json(events);
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> UpdateParentEvent([FromBody] LinkEventDto data)
+    {
+        try
+        {
+            var userId = userManager.GetUserId(User);
+            
+            // Find the child event we are editing
+            var childEvent = await context.Event
+                .Include(e => e.Venue)
+                .FirstOrDefaultAsync(e => e.Id == data.ChildId);
+
+            if (childEvent == null) return NotFound(new { success = false, message = "Event not found." });
+
+            // Security check: ensure they own the venue for this event
+            if (childEvent.Venue.UserId != userId) 
+                return Unauthorized(new { success = false, message = "Not authorized." });
+
+            // Update the relationship
+            childEvent.ParentEventId = data.ParentId;
+            await context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error async saving parent event");
+            return StatusCode(500, new { success = false, message = "Server error." });
+        }
+    }
+
+    // A tiny helper class to catch the JSON data
+    public class LinkEventDto
+    {
+        public int ChildId { get; set; }
+        public int? ParentId { get; set; } // Nullable in case they clear it
+    }
+
+    [AllowAnonymous]
+    public async Task<IActionResult> ChildEvents(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        // 1. Fetch the Father event just to get its name for the page title
+        var fatherEvent = await context.Event.FirstOrDefaultAsync(e => e.Id == id);
+        if (fatherEvent == null)
+        {
+            return NotFound();
+        }
+
+        // 2. Fetch all Child events that belong to this Father
+        var childEvents = await context.Event
+            .Include(e => e.Venue)
+            .Include(e => e.Venue.City)
+            .Include(e => e.EventType)
+            .Where(e => e.ParentEventId == id)
+            .OrderBy(e => e.StartDateTime)
+            .ToListAsync();
+
+        // Pass the Father's info to the view using ViewBag
+        ViewBag.FatherEventName = fatherEvent.Name;
+        ViewBag.FatherEventId = fatherEvent.Id;
+
+        return View(childEvents);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SearchVenues(string query)
+    {
+        var venues = await context.Venue
+            .Where(v => v.Name.ToLower().Contains(query.ToLower()))
+            .Select(v => new { id = v.Id, name = v.Name, city = v.City.Name })
+            .Take(10)
+            .ToListAsync();
+
+        return Json(venues);
     }
 }

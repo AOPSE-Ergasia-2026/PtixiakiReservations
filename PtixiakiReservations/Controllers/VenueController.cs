@@ -47,7 +47,7 @@ namespace PtixiakiReservations.Controllers
             return View(venues2);
         }
 
-        [Authorize(Roles = "Admin,Venue")]
+        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
         public async Task<IActionResult> MyVenues()
         {
             string userId = _userManager.GetUserId(HttpContext.User);
@@ -83,7 +83,7 @@ namespace PtixiakiReservations.Controllers
         }
 
         // GET: Venue/Edit/5
-        [Authorize(Roles = "Admin,Venue")]
+        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -127,7 +127,7 @@ namespace PtixiakiReservations.Controllers
 
         [HttpPost]
         [Obsolete]
-        [Authorize(Roles = "Venue,Admin")]
+        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
         public async Task<IActionResult> Edit(VenueViewModel model)
         {
             Venue venue =
@@ -184,7 +184,7 @@ namespace PtixiakiReservations.Controllers
         }
 
         // GET: Shops/Create
-        [Authorize(Roles = "Venue,Admin")]
+        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
         public IActionResult Create()
         {
             string id = _userManager.GetUserId(HttpContext.User);
@@ -297,7 +297,7 @@ namespace PtixiakiReservations.Controllers
         }
         
         [HttpGet]
-        [Authorize(Roles = "Venue,Admin")]
+        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
         public IActionResult GetVenuesForUser()
         {
             string userId = _userManager.GetUserId(HttpContext.User);

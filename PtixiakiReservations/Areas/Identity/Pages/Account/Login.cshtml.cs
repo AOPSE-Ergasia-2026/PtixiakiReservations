@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using PtixiakiReservations.Models;
+using PtixiakiReservations.Services;
 
 namespace PtixiakiReservations.Areas.Identity.Pages.Account
 {
@@ -21,16 +22,16 @@ namespace PtixiakiReservations.Areas.Identity.Pages.Account
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
-        private readonly IEmailSender _emailSender;
+        private readonly IEmailService _emailService;
 
         public LoginModel(SignInManager<ApplicationUser> signInManager, 
             ILogger<LoginModel> logger,
             UserManager<ApplicationUser> userManager,
-            IEmailSender emailSender)
+            IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _emailSender = emailSender;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -94,16 +95,31 @@ namespace PtixiakiReservations.Areas.Identity.Pages.Account
                 {
                     var user = await _userManager.FindByEmailAsync(Input.Email);
                     var code = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
-                    Console.WriteLine("******************************************");
-                    Console.WriteLine($"YOUR 2FA CODE IS: {code}");
-                    Console.WriteLine("******************************************");
-                    await _emailSender.SendEmailAsync(
-                        Input.Email,
-                        "Your Login Security Code",
-                        $"Your security code is: <strong>{code}</strong>. It will expire in 3 minutes.");
+                    string subject = "Your EventSphere Security Code";
+                    string message = $@"
+                        <div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>
+                            <h2>Security Verification</h2>
+                            <p>You requested a verification code.</p>
+                            <p>Your code is: <strong style='font-size: 24px; color: #4F46E5;'>{code}</strong></p>
+                            <p style='font-size: 12px; color: #666;'>If you did not request this code, please ignore this email.</p>
+                        </div>";
+
+                    try
+                    {
+                        await _emailService.SendEmailAsync(user.Email, subject, message);
+                        
+                        return RedirectToPage("./VerifyCode", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"EMAIL ERROR: {ex.Message}");
+                        
+                        ModelState.AddModelError(string.Empty, "Failed to send verification email. Please try again later.");
+                        return Page();
+                    }
 
                     
-                    return RedirectToPage("./VerifyCode", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
+                    
                 }
                 if (result.IsLockedOut)
                 {
@@ -118,35 +134,6 @@ namespace PtixiakiReservations.Areas.Identity.Pages.Account
             }
 
             // If we got this far, something failed, redisplay form
-            return Page();
-        }
-
-        public async Task<IActionResult> OnPostSendVerificationEmailAsync()
-        {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
-            var user = await _userManager.FindByEmailAsync(Input.Email);
-            if (user == null)
-            {
-                ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email.");
-            }
-
-            var userId = await _userManager.GetUserIdAsync(user);
-            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var callbackUrl = Url.Page(
-                "/Account/ConfirmEmail",
-                pageHandler: null,
-                values: new { userId = userId, code = code },
-                protocol: Request.Scheme);
-            await _emailSender.SendEmailAsync(
-                Input.Email,
-                "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-            ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email.");
             return Page();
         }
     }
