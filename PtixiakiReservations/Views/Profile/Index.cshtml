@@ -232,14 +232,25 @@
                                     @reservation.Seat.SubArea.AreaName - @reservation.Seat.Name
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap flex items-center gap-x-2">
                                 <div class="text-sm text-gray-500 dark:text-gray-400">
                                     @reservation.Date.ToString("MMM dd, yyyy h:mm tt")
                                 </div>
 
                                 <a href="/reservation/@reservation.ID/ics"
-                                    class="px-5 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition flex items-center gap-2">
-                                        Add Reminder
+                                    title="Add reminder to calendar"
+                                    aria-label="Add reminder to calendar"
+                                    class="p-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition flex items-center gap-2">
+                                        <!-- Calendar Icon -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" 
+                                            class="w-4 h-4" 
+                                            fill="none" 
+                                            viewBox="0 0 24 24" 
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 7V3m8 4V3m-9 8h10m-13 9h16a2 2 0 002-2V7a2 2 0 
+                                                    00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/>
+                                        </svg>
                                 </a>
                             </td>
                         </tr>
