@@ -113,8 +113,15 @@
                     </div>
                     <div class="flex items-start mb-3">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">@item.Name</h3>
-                        <svg class="h-5 w-5 mx-2 text-gray-500 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3L5 13h4l-3 6h12l-3-6h4L12 3z M12 19v4" />
+                        <svg class="h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 11V5" />          
+                            <path d="M12 11L6 18" />      
+                            <path d="M12 11L18 18" />     
+                            
+
+                            <circle cx="12" cy="4" r="2.5" fill="currentColor" stroke="none" />
+                            <circle cx="6" cy="19" r="2.5" fill="currentColor" stroke="none" /> 
+                            <circle cx="18" cy="19" r="2.5" fill="currentColor" stroke="none" /> 
                         </svg>
                     </div>
                     <div class="flex items-start mb-3">
@@ -755,8 +762,15 @@
                                         <div class="flex items-start mb-3">
                                             <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">${event.name || 'Unnamed Event'}</h3>
                                             ${isMasterEvent ? 
-                                            `<svg class="h-5 w-5 mx-2 text-gray-500 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3L5 13h4l-3 6h12l-3-6h4L12 3z M12 19v4" />
+                                            `<svg class="h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 11V5" />          
+                                                <path d="M12 11L6 18" />      
+                                                <path d="M12 11L18 18" />     
+                                                
+
+                                                <circle cx="12" cy="4" r="2.5" fill="currentColor" stroke="none" />
+                                                <circle cx="6" cy="19" r="2.5" fill="currentColor" stroke="none" /> 
+                                                <circle cx="18" cy="19" r="2.5" fill="currentColor" stroke="none" /> 
                                             </svg>` : ''}
                                         </div>
 

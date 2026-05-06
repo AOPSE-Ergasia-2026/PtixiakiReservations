@@ -47,16 +47,23 @@ namespace PtixiakiReservations.Controllers
             return View(venues2);
         }
 
-        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
-        public async Task<IActionResult> MyVenues()
+        [Authorize(Roles = "Admin,Venue")]
+        public async Task<IActionResult> MyVenues(string filter = "mine")
         {
             string userId = _userManager.GetUserId(HttpContext.User);
-            var venues = await _context.Venue
-                .Include(v => v.City)
-                .Where(v => v.UserId == userId)
-                .ToListAsync();
+            ViewBag.CurrentFilter = filter;
 
-            // Get subarea counts for each venue
+            var query = _context.Venue
+                .Include(v => v.City)
+                .AsQueryable();
+
+            if (filter != "all") 
+            {
+                query = query.Where(v => v.UserId == userId);
+            }
+
+            var venues = await query.ToListAsync();
+
             var subAreaCounts = new Dictionary<int, int>();
             var imagePaths = new Dictionary<int, string>();
             
@@ -64,18 +71,22 @@ namespace PtixiakiReservations.Controllers
             {
                 var count = await _context.SubArea.CountAsync(sa => sa.VenueId == venue.Id);
                 subAreaCounts[venue.Id] = count;
-                
-                // Add image path validation
+
                 imagePaths[venue.Id] = GetImagePath(venue.imgUrl);
             }
 
             ViewBag.SubAreaCounts = subAreaCounts;
             ViewBag.ImagePaths = imagePaths;
 
-            // Count events for all venues managed by this user
-            var eventCount = await _context.Event
-                .Where(e => venues.Select(v => v.Id).Contains(e.VenueId))
-                .CountAsync();
+            var venueIds = venues.Select(v => v.Id).ToList();
+            var eventCount = 0;
+            
+            if (venueIds.Any())
+            {
+                eventCount = await _context.Event
+                    .Where(e => venueIds.Contains(e.VenueId))
+                    .CountAsync();
+            }
 
             ViewBag.EventCount = eventCount;
 
@@ -83,7 +94,7 @@ namespace PtixiakiReservations.Controllers
         }
 
         // GET: Venue/Edit/5
-        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
+        [Authorize(Roles = "Admin,Venue")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -127,7 +138,7 @@ namespace PtixiakiReservations.Controllers
 
         [HttpPost]
         [Obsolete]
-        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
+        [Authorize(Roles = "Admin,Venue")]
         public async Task<IActionResult> Edit(VenueViewModel model)
         {
             Venue venue =

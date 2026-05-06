@@ -257,6 +257,8 @@ public class EventsController(
             .Include(e => e.ParentEvent) 
             .Include(e => e.Venue.City)
             .Include(e => e.EventType)
+            .Include(e => e.ChildEvents) 
+            .ThenInclude(c => c.SubArea)
             .FirstOrDefaultAsync(m => m.Id == id);
 
         if (eventDetails == null)
