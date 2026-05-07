@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <UserSecretsId>aspnet-PtixiakiReservations-5D1D0AAF-2349-4831-A081-52D4C1028561</UserSecretsId>
-    <TargetFramework>net9.0</TargetFramework>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <TargetFramework>net10.0</TargetFramework>
+    <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
     <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
   </PropertyGroup>
 
@@ -41,6 +41,15 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="SeedData\events.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="SeedData\venues.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 
