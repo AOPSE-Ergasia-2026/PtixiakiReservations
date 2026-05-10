@@ -306,12 +306,7 @@ public class DataSeeder
 
     private static void SeedEvents(ApplicationDbContext context)
     {
-        const int targetEventCount = 1000;
-
-        var existingEventCount = context.Event.Count();
-
-        if (existingEventCount >= targetEventCount)
-            return;
+        const int targetParentEventCount = 1000;
 
         var eventsFilePath = Path.Combine(AppContext.BaseDirectory, "SeedData", "events.json");
 
@@ -334,48 +329,150 @@ public class DataSeeder
         if (!venues.Any() || !types.Any())
             return;
 
-        var eventsToCreate = targetEventCount - existingEventCount;
-        var events = new List<Event>();
+        var parentEvents = context.Event
+            .Where(e => e.ParentEventId == null)
+            .ToList();
 
-        for (int i = 1; i <= eventsToCreate; i++)
+        var parentEventsToCreate = targetParentEventCount - parentEvents.Count;
+        var newParentEvents = new List<Event>();
+
+        for (int i = 1; i <= parentEventsToCreate; i++)
         {
             var type = types[random.Next(types.Count)];
-            var typeKey = type.Id.ToString();
+            var typeKey = ResolveEventTypeKey(type);
 
             if (!eventNamesByType.ContainsKey(typeKey) || !eventNamesByType[typeKey].Any())
                 continue;
 
             var venue = venues[random.Next(venues.Count)];
 
-            var venueSubAreas = subAreas
-                .Where(s => s.VenueId == venue.Id)
-                .ToList();
-
-            var subArea = venueSubAreas.Any()
-                ? venueSubAreas[random.Next(venueSubAreas.Count)]
-                : null;
-
             var start = DateTime.Now
                 .AddDays(random.Next(7, 365))
-                .AddHours(random.Next(8, 23))
-                .AddMinutes(random.Next(0, 4) * 15);
+                .Date
+                .AddHours(9);
+
+            var durationDays = random.Next(3, 11);
+            var end = start.Date
+                .AddDays(durationDays - 1)
+                .AddHours(23);
 
             var baseEventName = eventNamesByType[typeKey][random.Next(eventNamesByType[typeKey].Count)];
             var eventName = $"{baseEventName}";
 
-            events.Add(new Event
+            newParentEvents.Add(new Event
             {
                 Name = eventName,
                 StartDateTime = start,
-                EndTime = start.AddHours(random.Next(2, 7)),
+                EndTime = end,
                 EventTypeId = type.Id,
                 VenueId = venue.Id,
-                SubAreaId = subArea?.Id,
+                SubAreaId = null,
                 ImagePath = $"/images/events/event{random.Next(1, 5)}.jpg"
             });
         }
 
-        context.Event.AddRange(events);
+        if (newParentEvents.Any())
+        {
+            context.Event.AddRange(newParentEvents);
+            context.SaveChanges();
+            parentEvents.AddRange(newParentEvents);
+        }
+
+        var childEvents = context.Event
+            .Where(e => e.ParentEventId.HasValue)
+            .ToList();
+
+        var childDaysByParentId = childEvents
+            .GroupBy(e => e.ParentEventId!.Value)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(e => e.StartDateTime.Date).ToHashSet()
+            );
+
+        var childEventsToCreate = new List<Event>();
+
+        foreach (var parentEvent in parentEvents)
+        {
+            var type = types.FirstOrDefault(t => t.Id == parentEvent.EventTypeId);
+
+            if (type == null)
+                continue;
+
+            var typeKey = ResolveEventTypeKey(type);
+
+            if (!eventNamesByType.ContainsKey(typeKey) || !eventNamesByType[typeKey].Any())
+                continue;
+
+            if (parentEvent.EndTime.Date <= parentEvent.StartDateTime.Date)
+            {
+                parentEvent.StartDateTime = parentEvent.StartDateTime.Date.AddHours(9);
+                parentEvent.EndTime = parentEvent.StartDateTime.Date
+                    .AddDays(random.Next(3, 11) - 1)
+                    .AddHours(23);
+            }
+
+            if (!childDaysByParentId.TryGetValue(parentEvent.Id, out var existingChildDays))
+            {
+                existingChildDays = new HashSet<DateTime>();
+                childDaysByParentId[parentEvent.Id] = existingChildDays;
+            }
+
+            var venueSubAreas = subAreas
+                .Where(s => s.VenueId == parentEvent.VenueId)
+                .ToList();
+
+            for (var day = parentEvent.StartDateTime.Date; day <= parentEvent.EndTime.Date; day = day.AddDays(1))
+            {
+                if (!existingChildDays.Add(day))
+                    continue;
+
+                var childStart = day
+                    .AddHours(random.Next(10, 21))
+                    .AddMinutes(random.Next(0, 4) * 15);
+
+                var childDurationHours = random.Next(2, 6);
+                var childEnd = childStart.AddHours(childDurationHours);
+
+                if (childEnd.Date > day)
+                    childEnd = day.AddHours(23);
+
+                var childEventName = eventNamesByType[typeKey][random.Next(eventNamesByType[typeKey].Count)];
+                var subArea = venueSubAreas.Any()
+                    ? venueSubAreas[random.Next(venueSubAreas.Count)]
+                    : null;
+
+                childEventsToCreate.Add(new Event
+                {
+                    Name = $"{childEventName} - Day {(day - parentEvent.StartDateTime.Date).Days + 1}",
+                    StartDateTime = childStart,
+                    EndTime = childEnd,
+                    EventTypeId = parentEvent.EventTypeId,
+                    VenueId = parentEvent.VenueId,
+                    SubAreaId = subArea?.Id,
+                    ParentEventId = parentEvent.Id,
+                    ImagePath = null
+                });
+            }
+        }
+
+        context.Event.AddRange(childEventsToCreate);
+    }
+
+    private static string ResolveEventTypeKey(EventType eventType)
+    {
+        var eventTypeKeys = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Concert", "1" },
+            { "Theater", "2" },
+            { "Exhibition", "3" },
+            { "Sports", "4" },
+            { "Sport", "4" },
+            { "Conference", "5" }
+        };
+
+        return eventTypeKeys.TryGetValue(eventType.Name, out var typeKey)
+            ? typeKey
+            : eventType.Id.ToString();
     }
 
 
