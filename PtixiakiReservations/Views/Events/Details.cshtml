@@ -140,7 +140,7 @@
     </div>
     <!-- Sub Events -->
     @if(Model.ParentEventId == null && Model.ChildEvents!= null && Model.ChildEvents.Any()){
-        var schedulePageSize = 4;
+        var schedulePageSize = 10;
         var schedulePage = 1;
         var orderedChildEvents = Model.ChildEvents.OrderBy(s => s.StartDateTime).ToList();
         var totalSchedulePages = (int)Math.Ceiling(orderedChildEvents.Count / (double)schedulePageSize);

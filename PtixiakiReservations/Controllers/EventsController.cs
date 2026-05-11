@@ -204,42 +204,43 @@ public class EventsController(
         }
     }
 
-    [AllowAnonymous]
+   [AllowAnonymous]
     public async Task<IActionResult> EventsForToday(string city, int page = 1, int pageSize = 12)
     {
-        logger.LogInformation("Fetching events for today and future. City filter: {City}", city ?? "None");
-
         var today = DateTime.Today;
-
         var eventsQuery = context.Event
             .Include(e => e.Venue)
             .ThenInclude(v => v.City)
-            .Where(e => e.StartDateTime.Date >= today.AddDays(-30) &&
-                        e.StartDateTime.Date <= today.AddDays(60))
-            .OrderBy(e => e.StartDateTime);
+            .Where(e => e.ParentEventId == null); 
 
         if (!string.IsNullOrWhiteSpace(city))
         {
-            eventsQuery = (IOrderedQueryable<Event>)eventsQuery
-                .Where(e => e.Venue.City.Name.ToLower() == city.ToLower());
+            eventsQuery = eventsQuery.Where(e => e.Venue.City.Name.ToLower() == city.ToLower());
         }
+
+        eventsQuery = eventsQuery.OrderBy(e => e.StartDateTime);
+
+        int totalMasterEvents = await eventsQuery.CountAsync();
+
+
+        ViewBag.TotalMasterEvents = totalMasterEvents; 
+        ViewBag.TotalPages = (int)Math.Ceiling((double)totalMasterEvents / pageSize);
+        ViewBag.CurrentPage = page;
 
         var eventsList = await eventsQuery
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
-        // Add debug info to see event dates
-        var todayEvents = eventsList.Count(e => e.StartDateTime.Date == today);
-        var upcomingEvents = eventsList.Count(e => e.StartDateTime.Date > today);
-        var pastEvents = eventsList.Count(e => e.StartDateTime.Date < today);
+        var masterIds = eventsList.Select(e => e.Id).ToList();
 
-        logger.LogInformation(
-            "Found {Count} events. Distribution: Today: {TodayCount}, Upcoming: {UpcomingCount}, Past: {PastCount}",
-            eventsList.Count,
-            todayEvents,
-            upcomingEvents,
-            pastEvents);
+        var childCounts = await context.Event
+            .Where(e => e.ParentEventId != null && masterIds.Contains(e.ParentEventId.Value))
+            .GroupBy(e => e.ParentEventId.Value)
+            .Select(g => new { ParentId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ParentId, x => x.Count);
+
+        ViewBag.ChildCounts = childCounts;
 
         return View(eventsList);
     }

@@ -89,7 +89,7 @@
 
     <!-- Events Grid -->
     <div id="events-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        @foreach (var item in Model.Where(e => e.ParentEventId == null).Take(6))
+        @foreach (var item in Model)
         {
             var eventTimeClass = ViewBag.GetEventTimeClass != null ? ViewBag.GetEventTimeClass(item.StartDateTime) : "event-upcoming";
 
@@ -155,7 +155,11 @@
                     }
                     <div class="flex justify-between items-center border-t pt-4">
                         @{
-                            int childCount = Model.Count(e => e.ParentEventId == item.Id);
+                            var childCounts = ViewBag.ChildCounts as Dictionary<int, int>;
+                            
+                            int childCount = childCounts != null && childCounts.ContainsKey(item.Id) 
+                                ? childCounts[item.Id] 
+                                : 0;
                         }
                         
                         <a asp-action="ChildEvents" asp-route-id="@item.Id" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
@@ -191,7 +195,7 @@
     </div>
 
     <!-- Pagination -->
-    <div id="pagination" class="mt-12 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 @(Model.Count() > 12 ? "" : "hidden")">
+    <div id="pagination" class="mt-12 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 @(ViewBag.TotalPages > 1 ? "" : "hidden")">
         <button id="prev-page" class="flex items-center px-5 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -301,10 +305,9 @@
     <script>
         $(document).ready(function () {
             let currentPage = 1;
-            let pageSize = 6;
+            let pageSize = 12;
             
-            // Get the exact count of Master Events from C# and calculate the total pages
-            let totalRecords = @Model.Count(e => e.ParentEventId == null);
+            let totalRecords = @(ViewBag.TotalMasterEvents ?? 0);
             let totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
             
             let searchParams = {};
@@ -823,58 +826,6 @@
                     });
             }
 
-            // Helper function to build event card HTML
-            function buildEventCard(event, timeClass) {
-                // Format dates
-                const startDate = new Date(event.startDateTime);
-                const endDate = new Date(event.endTime);
-                const formattedStartDate = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-                const formattedStartTime = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                const formattedEndTime = endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-
-                // Create venue display if venue exists
-                let venueHtml = '';
-                if (event.venue) {
-                    venueHtml = `
-                        <div class="flex items-start mb-4">
-                            <svg class="h-5 w-5 text-gray-500 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-600">${event.venue.name}</p>
-                                ${event.venue.city ? `<p class="text-sm text-gray-500">${event.venue.city.name}</p>` : ''}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Create event card
-                return `
-                    <div class="event-card ${timeClass} rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                        <div class="p-5">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">${event.name}</h3>
-                            <div class="flex items-start mb-3">
-                                <svg class="h-5 w-5 text-gray-500 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <div>
-                                    <p class="text-sm text-gray-600">${formattedStartDate}</p>
-                                    <p class="text-sm text-gray-500">${formattedStartTime} - ${formattedEndTime}</p>
-                                </div>
-                            </div>
-                            ${venueHtml}
-                            <div class="flex justify-end">
-                                <a href="/Events/Details/${event.id}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-                                    View Details →
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Helper function to determine event time class
             function getEventTimeClass(eventDate) {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
