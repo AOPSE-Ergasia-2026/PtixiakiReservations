@@ -368,7 +368,7 @@ public class EventsController(
         string StartDate = null,
         string EndDate = null,
         string StartTime = null,
-        string EndTime = null)
+        string MultiEndTime = null)
     {
         bool isMultiDay = IsMultiDay == "on" || IsMultiDay == "true";
         var userId = userManager.GetUserId(User);
@@ -406,8 +406,9 @@ public class EventsController(
             // 2. Validate Model State
             if (!ModelState.IsValid)
             {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
                 logger.LogWarning("Model state is invalid.");
-                return BadRequest(new { success = false, message = "Invalid form data." });
+                return BadRequest(new { success = false, message = "Invalid form data.", errors });
             }
 
             // 3. Verify venue belongs to the current user
@@ -424,7 +425,7 @@ public class EventsController(
 
             // 4. Handle Save Logic
             if (isMultiDay && !string.IsNullOrEmpty(StartDate) && !string.IsNullOrEmpty(EndDate)
-                && !string.IsNullOrEmpty(StartTime) && !string.IsNullOrEmpty(EndTime))
+                && !string.IsNullOrEmpty(StartTime) && !string.IsNullOrEmpty(MultiEndTime))
             {
                 logger.LogInformation("Creating multi-day events from {StartDate} to {EndDate}", StartDate, EndDate);
 
@@ -432,7 +433,7 @@ public class EventsController(
                 DateTime endDate = DateTime.Parse(EndDate);
                 
                 TimeSpan startTimeSpan = DateTime.TryParse(StartTime, out DateTime pst) ? pst.TimeOfDay : TimeSpan.Parse(StartTime);
-                TimeSpan endTimeSpan = DateTime.TryParse(EndTime, out DateTime pet) ? pet.TimeOfDay : TimeSpan.Parse(EndTime);
+                TimeSpan endTimeSpan = DateTime.TryParse(MultiEndTime, out DateTime pet) ? pet.TimeOfDay : TimeSpan.Parse(MultiEndTime);
 
                 for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
                 {
@@ -512,6 +513,7 @@ public class EventsController(
             eventId = returnedEventId, 
             eventName = newEvent.Name,
             venueId = newEvent.VenueId,
+            venueName = venue.Name,
             eventTypeId = newEvent.EventTypeId
         });
         }
@@ -1257,7 +1259,6 @@ private async Task ReloadCreateDropdowns(string userId)
     }
     [Authorize] 
     [HttpGet]
-    [HttpGet]
     public async Task<IActionResult> SearchParentEvents(string query)
     {
         var events = await context.Event
@@ -1267,6 +1268,7 @@ private async Task ReloadCreateDropdowns(string userId)
                 name = e.Name,
                 venue = e.Venue.Name,
                 venueId = e.VenueId, // Necessary for inheritance
+                eventTypeId = e.EventTypeId,
                 rawStartDate = e.StartDateTime.ToString("yyyy-MM-ddTHH:mm"),
                 rawEndDate = e.EndTime.ToString("yyyy-MM-ddTHH:mm"),
                 date = e.StartDateTime.ToString("MMM dd, yyyy")
@@ -1274,6 +1276,25 @@ private async Task ReloadCreateDropdowns(string userId)
             .Take(5)
             .ToListAsync();
         return Json(events);
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> GetSubEvents(int parentId)
+    {
+        var subEvents = await context.Event
+            .Include(e => e.SubArea)
+            .Where(e => e.ParentEventId == parentId)
+            .OrderBy(e => e.StartDateTime)
+            .Select(e => new {
+                id = e.Id,
+                name = e.Name, 
+                date = e.StartDateTime.ToString("dddd, MMM d, yyyy"),
+                time = e.StartDateTime.ToString("h:mm tt") + " - " + e.EndTime.ToString("h:mm tt")
+            })
+            .ToListAsync();
+            
+        return Json(subEvents);
     }
 
     [Authorize]
