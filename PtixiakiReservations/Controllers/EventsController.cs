@@ -1372,10 +1372,62 @@ private async Task ReloadCreateDropdowns(string userId)
     {
         var venues = await context.Venue
             .Where(v => v.Name.ToLower().Contains(query.ToLower()))
-            .Select(v => new { id = v.Id, name = v.Name, city = v.City.Name })
+            .Select(v => new { id = v.Id, name = v.Name, city = v.City != null ? v.City.Name : "N/A" })
             .Take(10)
             .ToListAsync();
 
         return Json(venues);
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> DuplicateSubEvent(int id)
+    {
+        var ev = await context.Event
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (ev == null)
+        {
+            return NotFound();
+        }
+
+
+        var newEvent = new Event
+        {
+            Name = GenerateNextName(ev.Name),
+            StartDateTime = ev.StartDateTime,
+            EndTime = ev.EndTime,
+            EventTypeId = ev.EventTypeId,
+            VenueId = ev.VenueId,
+            SubAreaId = ev.SubAreaId,
+            ParentEventId = ev.ParentEventId,
+            ImagePath = ev.ImagePath
+        };
+
+        context.Event.Add(newEvent);
+        await context.SaveChangesAsync();
+
+        return Json(new { success = true, id = newEvent.Id });
+    }
+
+    private string GenerateNextName(string currentName)
+    {
+        if (string.IsNullOrWhiteSpace(currentName)) return "New Event 1";
+
+        var match = System.Text.RegularExpressions.Regex.Match(currentName, @"(\d+)$");
+
+        if (match.Success)
+        {
+            string numberStr = match.Value;
+            if (int.TryParse(numberStr, out int number))
+            {
+                string baseName = currentName.Substring(0, match.Index).TrimEnd();
+                return $"{baseName} {number + 1}";
+            }
+        }
+
+        // If no trailing number found, append " 1"
+        return $"{currentName.TrimEnd()} 1";
     }
 }

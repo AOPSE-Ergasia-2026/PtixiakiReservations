@@ -684,8 +684,7 @@
                 
                 tbody.innerHTML = '';
                 counter.textContent = data.length;
-                
-                // --- THE FIX: ALWAYS show the container so the "+" button is visible! ---
+
                 container.classList.remove('hidden'); 
                 
                 if (data.length === 0) {
@@ -705,11 +704,15 @@
                             <div class="font-medium text-gray-700">${ev.date}</div>
                             <div class="text-xs text-indigo-600 font-medium mt-0.5">${ev.time}</div>
                         </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="/Events/Details/${ev.id}" target="_blank" class="text-indigo-600 hover:text-indigo-900 mr-4">Details</a>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-medium flex justify-end items-center gap-2">
                             <button type="button" onclick="deleteSubEvent(${ev.id})" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors" title="Delete this instance">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <button type="button" onclick="DuplicateSubEvent(${ev.id})" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 transition-colors" title="Duplicate this instance">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v6h4a1 1 0 110 2h-4v6a1 1 0 11-2 0v-6H4a1 1 0 110-2h4V4a1 1 0 011-1z" clip-rule="evenodd" />
                                 </svg>
                             </button>
                         </td>`;
@@ -737,6 +740,17 @@
                 };
                 reader.readAsDataURL(input.files[0]);
             }
+        }
+
+        async function DuplicateSubEvent(id) {
+            if (!confirm("Are you sure you want to duplicate this specific sub-event?")) return;
+            try {
+                const res = await fetch(`/Events/DuplicateSubEvent?id=${id}`, {
+                    method: 'POST'
+                });
+                if (res.ok) updateSubEventsList(document.getElementById('ParentEventId').value);
+            } catch (e) { console.error("Error duplicating", e);        
+        }
         }
     </script>
 }
