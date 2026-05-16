@@ -1290,7 +1290,7 @@ private async Task ReloadCreateDropdowns(string userId)
                 name = e.Name, 
                 date = e.StartDateTime.ToString("dddd, MMM d, yyyy"),
                 time = e.StartDateTime.ToString("h:mm tt") + " - " + e.EndTime.ToString("h:mm tt"),
-                city = e.Venue.City.Name
+                layout= e.SubArea.AreaName
             })
             .ToListAsync();
             
