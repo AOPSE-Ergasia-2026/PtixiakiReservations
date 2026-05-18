@@ -220,6 +220,7 @@ public class EventsController(
         var eventsQuery = context.Event
             .Include(e => e.Venue)
             .ThenInclude(v => v.City)
+            .Include(e => e.EventType) 
             .Where(e => e.ParentEventId == null); 
 
         if (!string.IsNullOrWhiteSpace(city))
