@@ -958,7 +958,7 @@ private async Task ReloadCreateDropdowns(string userId)
     [AllowAnonymous]
     public async Task<IActionResult> GetAutocompleteResults(string query)
     {
-        if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 1)
         {
             return Json(new List<object>());
         }
