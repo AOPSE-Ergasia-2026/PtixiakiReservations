@@ -447,7 +447,7 @@
 
             // --- 3. Venue Selection ---
             venueSearch.addEventListener('input', function(e) {
-                if (e.target.value.length < 2) { venueResultsList.classList.add('hidden'); return; }
+                if (e.target.value.length < 1) { venueResultsList.classList.add('hidden'); return; }
                 fetch(`/Events/SearchVenues?query=${encodeURIComponent(e.target.value)}`)
                     .then(res => res.json())
                     .then(data => {
