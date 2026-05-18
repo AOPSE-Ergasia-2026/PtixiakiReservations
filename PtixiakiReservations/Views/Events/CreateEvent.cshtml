@@ -214,6 +214,13 @@
     </div>
 </div>
 
+<style>
+    .highlight {
+        font-weight: 600;
+        color: #3b82f6;
+    }
+</style>
+
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 
@@ -451,11 +458,14 @@
                 fetch(`/Events/SearchVenues?query=${encodeURIComponent(e.target.value)}`)
                     .then(res => res.json())
                     .then(data => {
+                        const query = e.target.value;
                         venueResultsList.innerHTML = '';
                         data.forEach(v => {
+                            const highlightedNameText = highlightMatch(v.name, query);
+                            const highlightedCityText = highlightMatch(v.city || '', query);
                             const li = document.createElement('li');
                             li.className = 'p-3 hover:bg-indigo-50 cursor-pointer border-b text-sm';
-                            li.innerHTML = `<strong>${v.name}</strong><br><small>${v.city || ''}</small>`;
+                            li.innerHTML = `<strong>${highlightedNameText}</strong><br><small>${highlightedCityText || ''}</small>`;
                             li.onclick = () => {
                                 venueHiddenInput.value = v.id;
                                 venueSearch.value = v.name + (v.city ? ', ' + v.city : '');
@@ -469,6 +479,16 @@
                         venueResultsList.classList.remove('hidden');
                     });
             });
+
+
+
+            // Highlight matching text
+            function highlightMatch(text, query) {
+                if (!query) return text;
+
+                const regex = new RegExp('(' + query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + ')', 'gi');
+                return text.replace(regex, '<span class="highlight">$1</span>');
+            }
 
             clearVenueBtn.onclick = () => {
                 venueHiddenInput.value = '';
