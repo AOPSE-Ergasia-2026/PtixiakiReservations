@@ -698,7 +698,7 @@
             // Add each seat
             currentSeats.forEach(seat => {
                 const seatElement = document.createElement('div');
-                seatElement.className = 'absolute text-white rounded-md flex items-center justify-center cursor-move shadow-md';
+                seatElement.className = 'absolute text-white rounded-md flex flex-col items-center justify-center cursor-move shadow-md';
                 seatElement.classList.add(selectedSeats.has(seat.name) ? 'bg-red-500' : 'bg-blue-500');
                 seatElement.classList.add(selectedSeats.has(seat.name) ? 'hover:bg-red-600' : 'hover:bg-blue-600');
 
@@ -706,12 +706,46 @@
                 seatElement.style.height = '60px';
                 seatElement.style.left = `${seat.x}px`;
                 seatElement.style.top = `${seat.y}px`;
-                seatElement.textContent = seat.name;
                 seatElement.dataset.id = seat.id;
                 seatElement.dataset.name = seat.name;
 
+                // Seat name display
+                const seatNameDiv = document.createElement('div');
+                seatNameDiv.textContent = seat.name;
+                seatNameDiv.className = 'w-full text-center truncate';
+                seatElement.appendChild(seatNameDiv);
+
+                // Edit button
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'mt-0.5 px-2 border-white rounded text-lg hover:text-yellow-400 focus:outline-none';
+                editBtn.textContent = '✎';
+                editBtn.title = 'Edit seat name';
+                seatElement.appendChild(editBtn);
+
+                // Edit seat name handler
+                editBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Show prompt for new name
+                    const newName = prompt('Edit seat name:', seat.name);
+                    if (newName && newName.trim() && newName !== seat.name) {
+                        // Check for duplicate names
+                        if (currentSeats.some(s => s.name === newName)) {
+                            updateStatus('Seat name must be unique.', 'error');
+                            return;
+                        }
+                        seat.name = newName;
+                        seatNameDiv.textContent = newName;
+                        seatElement.dataset.name = newName;
+                        updateStatus(`Seat name updated to: ${newName}`, 'success');
+                    }
+                });
+
                 // Handle seat selection
                 seatElement.addEventListener('click', function(e) {
+                    // Only select if not clicking edit button
+                    if (e.target === editBtn) return;
                     e.preventDefault();
                     e.stopPropagation();
 
@@ -734,6 +768,8 @@
                 let originalX, originalY;
 
                 seatElement.addEventListener('mousedown', function(e) {
+                    // Don't drag if clicking edit button
+                    if (e.target === editBtn) return;
                     e.preventDefault();
 
                     // Prepare for potential drag
