@@ -280,5 +280,64 @@ namespace PtixiakiReservations.Controllers
         {
             return _context.SubArea.Any(e => e.Id == id);
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Venue,Admin,SuperOrganizer")]
+        public async Task<IActionResult> Duplicate([FromBody] DuplicateSubAreaRequest request)
+        {
+            // Βρίσκουμε το original layout
+            var originalSubArea = await _context.SubArea
+                .FirstOrDefaultAsync(sa => sa.Id == request.Id);
+
+            if (originalSubArea == null)
+            {
+                return NotFound();
+            }
+
+            // Δημιουργούμε νέο layout
+            var duplicatedSubArea = new SubArea
+            {
+                AreaName = request.Name,
+                Desc = originalSubArea.Desc,
+                Width = originalSubArea.Width,
+                Height = originalSubArea.Height,
+                Top = originalSubArea.Top,
+                Left = originalSubArea.Left,
+                Rotate = originalSubArea.Rotate,
+                VenueId = originalSubArea.VenueId
+            };
+
+            _context.SubArea.Add(duplicatedSubArea);
+
+            // Save για να πάρει νέο ID
+            await _context.SaveChangesAsync();
+
+            // Παίρνουμε όλα τα seats
+            var originalSeats = await _context.Seat
+                .Where(s => s.SubAreaId == originalSubArea.Id)
+                .ToListAsync();
+
+            // Κάνουμε duplicate τα seats
+            foreach (var seat in originalSeats)
+            {
+                var duplicatedSeat = new Seat
+                {
+                    Name = seat.Name,
+                    X = seat.X,
+                    Y = seat.Y,
+                    Available = seat.Available,
+                    SubAreaId = duplicatedSubArea.Id
+                };
+
+                _context.Seat.Add(duplicatedSeat);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true
+            });
+        }
     }
 }
