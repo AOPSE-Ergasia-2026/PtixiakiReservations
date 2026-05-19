@@ -69,13 +69,20 @@
                                     <h3 class="text-lg font-semibold text-gray-800">Location</h3>
                                     <p class="text-gray-700 mt-1">@Model.Venue.Name</p>
                                     @if (Model.Venue.Address != null)
-                                    {
-                                        <p class="text-gray-600">@Model.Venue.Address</p>
-                                    }
-                                    @if (Model.Venue.City != null)
-                                    {
-                                        <p class="text-gray-600">@Model.Venue.City.Name</p>
-                                    }
+{
+    <p class="text-gray-600">@Model.Venue.Address</p>
+
+    var mapQuery = Uri.EscapeDataString(
+        Model.Venue.Name + ", " +
+        Model.Venue.Address + ", " +
+        Model.Venue.City.Name
+    );
+
+    <a href="https://www.google.com/maps/search/?api=1&query=@mapQuery"
+       class="inline-flex items-center mt-3 text-blue-600 hover:text-blue-800 font-medium transition-colors">
+        📍 View on Google Maps
+    </a>
+}
                                 </div>
                             </div>
                         </div>
@@ -96,6 +103,13 @@
                             </div>
                         </div>
                     }
+
+                    <div class="w-full mt-3 text-center">
+   
+</div>
+
+</div>
+                    
                 </div>
 
                 <!-- Right Column - Action Card -->
