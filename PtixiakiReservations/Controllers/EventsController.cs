@@ -1098,50 +1098,14 @@ private async Task ReloadCreateDropdowns(string userId)
         return View(eventToEdit);
     }
 
-    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Edit(int id, Event updatedEvent)
     {
         if (id != updatedEvent.Id)
         {
             return NotFound();
-        }
-
-        // Get the current user ID
-        var userId = userManager.GetUserId(User);
-
-        // Verify the venue belongs to the current user
-        var venue = await context.Venue
-            .FirstOrDefaultAsync(v => v.Id == updatedEvent.VenueId && v.UserId == userId);
-
-        if (venue == null)
-        {
-            logger.LogWarning("User {UserId} attempted to edit event for venue {VenueId} they don't own",
-                userId, updatedEvent.VenueId);
-            ModelState.AddModelError("VenueId", "You can only edit events for venues you own.");
-
-            // Reload the form data
-            ViewBag.VenueList = await context.Venue
-                .Where(v => v.UserId == userId)
-                .Select(v => new SelectListItem
-                {
-                    Value = v.Id.ToString(),
-                    Text = v.Name
-                }).ToListAsync();
-
-            ViewBag.EventTypeList = new SelectList(await context.EventType.ToListAsync(), "Id", "Name");
-
-            // Get sub areas for the selected venue
-            ViewBag.SubAreaList = await context.SubArea
-                .Where(sa => sa.VenueId == updatedEvent.VenueId)
-                .Select(sa => new SelectListItem
-                {
-                    Value = sa.Id.ToString(),
-                    Text = sa.AreaName
-                }).ToListAsync();
-
-            return View(updatedEvent);
         }
 
         if (ModelState.IsValid)
@@ -1154,8 +1118,6 @@ private async Task ReloadCreateDropdowns(string userId)
                 {
                     return NotFound();
                 }
-
-                // Update only the fields that should be editable
                 originalEvent.Name = updatedEvent.Name;
                 originalEvent.StartDateTime = updatedEvent.StartDateTime;
                 originalEvent.EndTime = updatedEvent.EndTime;
@@ -1165,7 +1127,9 @@ private async Task ReloadCreateDropdowns(string userId)
 
                 await context.SaveChangesAsync();
 
-                logger.LogInformation("Event {EventId} updated successfully by user {UserId}", id, userId);
+                var userId = userManager.GetUserId(User);
+                logger.LogInformation("Event {EventId} updated successfully by Admin {UserId}", id, userId);
+                
                 TempData["SuccessMessage"] = "Event updated successfully.";
 
                 return RedirectToAction(nameof(VenueEvents), new { venueId = updatedEvent.VenueId });
@@ -1181,62 +1145,16 @@ private async Task ReloadCreateDropdowns(string userId)
                 else
                 {
                     ModelState.AddModelError("", "The event was modified by another user. Please try again.");
-
-                    // Reload the form data
-                    ViewBag.VenueList = await context.Venue
-                        .Where(v => v.UserId == userId)
-                        .Select(v => new SelectListItem
-                        {
-                            Value = v.Id.ToString(),
-                            Text = v.Name
-                        }).ToListAsync();
-
-                    ViewBag.EventTypeList = new SelectList(await context.EventType.ToListAsync(), "Id", "Name");
-
-                    // Get sub areas for the selected venue
-                    ViewBag.SubAreaList = await context.SubArea
-                        .Where(sa => sa.VenueId == updatedEvent.VenueId)
-                        .Select(sa => new SelectListItem
-                        {
-                            Value = sa.Id.ToString(),
-                            Text = sa.AreaName
-                        }).ToListAsync();
-
-                    return View(updatedEvent);
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error updating event {EventId}", id);
                 ModelState.AddModelError("", "An error occurred while updating the event. Please try again.");
-
-                // Reload the form data
-                ViewBag.VenueList = await context.Venue
-                    .Where(v => v.UserId == userId)
-                    .Select(v => new SelectListItem
-                    {
-                        Value = v.Id.ToString(),
-                        Text = v.Name
-                    }).ToListAsync();
-
-                ViewBag.EventTypeList = new SelectList(await context.EventType.ToListAsync(), "Id", "Name");
-
-                // Get sub areas for the selected venue
-                ViewBag.SubAreaList = await context.SubArea
-                    .Where(sa => sa.VenueId == updatedEvent.VenueId)
-                    .Select(sa => new SelectListItem
-                    {
-                        Value = sa.Id.ToString(),
-                        Text = sa.AreaName
-                    }).ToListAsync();
-
-                return View(updatedEvent);
             }
         }
 
-        // If model state is invalid
         ViewBag.VenueList = await context.Venue
-            .Where(v => v.UserId == userId)
             .Select(v => new SelectListItem
             {
                 Value = v.Id.ToString(),

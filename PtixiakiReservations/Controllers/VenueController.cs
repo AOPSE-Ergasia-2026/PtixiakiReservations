@@ -103,7 +103,7 @@ namespace PtixiakiReservations.Controllers
         }
 
         // GET: Venue/Edit/5
-        [Authorize(Roles = "Admin,Venue")]
+        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -147,7 +147,7 @@ namespace PtixiakiReservations.Controllers
 
         [HttpPost]
         [Obsolete]
-        [Authorize(Roles = "Admin,Venue")]
+        [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
         public async Task<IActionResult> Edit(VenueViewModel model)
         {
             Venue venue =
