@@ -506,6 +506,7 @@
             let dragHandler = null;
             let upHandler = null;
             let outlineDiv = null;
+            let hintSeatsDiv = null;
 
             function exitAddMode() {
                 addMode = false;
@@ -519,6 +520,8 @@
                 document.removeEventListener('keydown', escHandler);
                 if (outlineDiv && outlineDiv.parentNode) outlineDiv.parentNode.removeChild(outlineDiv);
                 outlineDiv = null;
+                if (hintSeatsDiv && hintSeatsDiv.parentNode) hintSeatsDiv.parentNode.removeChild(hintSeatsDiv);
+                hintSeatsDiv = null;
             }
 
             function escHandler(e) {
@@ -542,6 +545,7 @@
                     dragStart = { x: e.offsetX, y: e.offsetY };
                     dragEnd = null;
 
+
                     // Create outline div for rectangle
                     if (!outlineDiv) {
                         outlineDiv = document.createElement('div');
@@ -553,6 +557,17 @@
                         seatMap.appendChild(outlineDiv);
                     }
                     outlineDiv.style.display = 'block';
+
+                    // Create hint seats container
+                    if (!hintSeatsDiv) {
+                        hintSeatsDiv = document.createElement('div');
+                        hintSeatsDiv.style.position = 'absolute';
+                        hintSeatsDiv.style.pointerEvents = 'none';
+                        hintSeatsDiv.style.zIndex = 1001;
+                        seatMap.appendChild(hintSeatsDiv);
+                    }
+                    hintSeatsDiv.innerHTML = '';
+                    hintSeatsDiv.style.display = 'none';
 
                     // Handler for mousemove (drag)
                     dragHandler = function(ev) {
@@ -566,6 +581,38 @@
                         outlineDiv.style.top = y + 'px';
                         outlineDiv.style.width = w + 'px';
                         outlineDiv.style.height = h + 'px';
+
+                        // Draw hint seats
+                        if (w > 10 && h > 10) {
+                            hintSeatsDiv.style.left = x + 'px';
+                            hintSeatsDiv.style.top = y + 'px';
+                            hintSeatsDiv.style.width = w + 'px';
+                            hintSeatsDiv.style.height = h + 'px';
+                            hintSeatsDiv.innerHTML = '';
+                            hintSeatsDiv.style.display = 'block';
+                            const seatSize = 60;
+                            const seatSpacing = 5;
+                            const cols = Math.max(1, Math.floor((w + seatSpacing) / (seatSize + seatSpacing)));
+                            const rows = Math.max(1, Math.floor((h + seatSpacing) / (seatSize + seatSpacing)));
+                            for (let row = 0; row < rows; row++) {
+                                for (let col = 0; col < cols; col++) {
+                                    const seatDiv = document.createElement('div');
+                                    seatDiv.style.position = 'absolute';
+                                    seatDiv.style.left = (col * (seatSize + seatSpacing)) + 'px';
+                                    seatDiv.style.top = (row * (seatSize + seatSpacing)) + 'px';
+                                    seatDiv.style.width = seatSize + 'px';
+                                    seatDiv.style.height = seatSize + 'px';
+                                    seatDiv.style.background = 'rgba(253, 224, 71, 0.5)';
+                                    seatDiv.style.border = '1.5px dashed #facc15';
+                                    seatDiv.style.borderRadius = '0.5rem';
+                                    seatDiv.style.opacity = '0.5';
+                                    seatDiv.style.pointerEvents = 'none';
+                                    hintSeatsDiv.appendChild(seatDiv);
+                                }
+                            }
+                        } else {
+                            hintSeatsDiv.style.display = 'none';
+                        }
                     };
 
                     // Handler for mouseup (finish drag or click)
@@ -602,6 +649,8 @@
                         }
                         if (outlineDiv && outlineDiv.parentNode) outlineDiv.parentNode.removeChild(outlineDiv);
                         outlineDiv = null;
+                        if (hintSeatsDiv && hintSeatsDiv.parentNode) hintSeatsDiv.parentNode.removeChild(hintSeatsDiv);
+                        hintSeatsDiv = null;
                         seatsToAdd.forEach(pos => {
                             const seatNumber = currentSeats.length + 1;
                             const newSeat = {
