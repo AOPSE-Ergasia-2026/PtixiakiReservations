@@ -111,7 +111,7 @@
                         </button>
                         <button type="submit" 
                                 class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
-                            Create Sub Area
+                            Create Layout
                         </button>
                     </div>
                 </form>
@@ -125,9 +125,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <h3 class="mt-4 text-lg font-medium text-gray-900">No sub areas found</h3>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">No layout found</h3>
                 <p class="mt-2 text-sm text-gray-500">
-                    This venue doesn't have any sub areas configured yet.
+                    This venue doesn't have any layouts configured yet.
                 </p>
                 @if (canCreateSubAreas && userOwnsVenue)
                 {
@@ -136,7 +136,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                        Create Your First Sub Area
+                        Create Your First layout
                     </button>
                 }
             </div>
@@ -189,12 +189,31 @@
                             }
 
                             <!-- Actions -->
-                            <div class="mt-6 flex justify-end">
+                            <div class="mt-6 flex justify-end gap-3">
+
+                               <!-- Duplicate Button -->
+                                <button type="button"
+                                        onclick="openDuplicateModal(@subArea.Id)"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm transition-colors">
+
+                                    Duplicate
+                                </button>
+
+                                <!-- View Details Button -->
                                 <a href="@Url.Action("Details", "SubAreas", new { id = subArea.Id, venueId = ViewBag.VenueId })"
-                                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm transition-colors">
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm transition-colors">
+
                                     View Details
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="ml-2 h-4 w-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
                                     </svg>
                                 </a>
                             </div>
@@ -213,6 +232,45 @@
                 </svg>
                 Return to @ViewBag.VenueName
             </a>
+        </div>
+    </div>
+</div>
+
+<!-- Duplicate Modal -->
+<div id="duplicateModal"
+     class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+
+        <!-- Title -->
+        <h2 class="text-xl font-semibold text-gray-800">
+            Please select a name for the layout that you like to dublicate
+        </h2>
+
+        <!-- Input -->
+        <div class="mt-4">
+            <input id="duplicateName"
+                   type="text"
+                   placeholder="Enter layout name"
+                   class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+
+        <!-- Buttons -->
+        <div class="mt-6 flex justify-end gap-3">
+
+            <!-- Cancel -->
+            <button type="button"
+                    onclick="closeDuplicateModal()"
+                    class="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
+                Cancel
+            </button>
+
+            <!-- Confirm -->
+            <button type="button"
+                    onclick="confirmDuplicate()"
+                    class="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors">
+                Confirm
+            </button>
         </div>
     </div>
 </div>
@@ -295,4 +353,60 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+    let selectedSubAreaId = 0;
+
+    function openDuplicateModal(subAreaId) {
+        selectedSubAreaId = subAreaId;
+
+        document.getElementById('duplicateModal').classList.remove('hidden');
+        document.getElementById('duplicateModal').classList.add('flex');
+    }
+
+    function closeDuplicateModal() {
+        document.getElementById('duplicateModal').classList.add('hidden');
+        document.getElementById('duplicateModal').classList.remove('flex');
+
+        document.getElementById('duplicateName').value = '';
+    }
+
+    async function confirmDuplicate() {
+
+        const layoutName = document.getElementById('duplicateName').value;
+
+        if (!layoutName.trim()) {
+            alert('Please enter a name');
+            return;
+        }
+
+        try {
+
+            const response = await fetch('/SubAreas/Duplicate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id: selectedSubAreaId,
+                    name: layoutName
+                })
+            });
+
+            if (response.ok) {
+
+                closeDuplicateModal();
+
+                // refresh page
+                location.reload();
+            }
+            else {
+                alert('Duplicate failed');
+            }
+
+        }
+        catch (error) {
+            console.error(error);
+            alert('Something went wrong');
+        }
+    }
 </script>
