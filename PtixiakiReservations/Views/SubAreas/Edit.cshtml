@@ -498,20 +498,133 @@
             loadSeats(subAreaId);
 
             // Event handlers for buttons
+            // --- Add Mode State ---
+            let addMode = false;
+            let dragStart = null;
+            let dragEnd = null;
+            let addModeHandler = null;
+            let dragHandler = null;
+            let upHandler = null;
+            let outlineDiv = null;
+
+            function exitAddMode() {
+                addMode = false;
+                addSeatBtn.classList.remove('bg-yellow-400', 'text-black', 'ring-2', 'ring-yellow-400');
+                addSeatBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add New Seat`;
+                updateStatus('Exited add seat mode.', 'info');
+                seatMap.style.cursor = '';
+                seatMap.removeEventListener('mousedown', addModeHandler);
+                document.removeEventListener('mousemove', dragHandler);
+                document.removeEventListener('mouseup', upHandler);
+                document.removeEventListener('keydown', escHandler);
+                if (outlineDiv && outlineDiv.parentNode) outlineDiv.parentNode.removeChild(outlineDiv);
+                outlineDiv = null;
+            }
+
+            function escHandler(e) {
+                if (e.key === 'Escape') exitAddMode();
+            }
+
             addSeatBtn.addEventListener('click', function() {
-                console.log("Adding new seat");
-                const seatNumber = currentSeats.length + 1;
-                const newSeat = {
-                    id: `temp-${Date.now()}`, // Temporary ID until saved
-                    name: `Seat ${seatNumber}`,
-                    x: 50,
-                    y: 50,
-                    available: true
+                if (addMode) {
+                    exitAddMode();
+                    return;
+                }
+                addMode = true;
+                addSeatBtn.classList.add('bg-yellow-400', 'text-black', 'ring-2', 'ring-yellow-400');
+                addSeatBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="yellow" opacity="0.3"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Adding Seats: Click or Drag`;
+                updateStatus('Add mode: Click to add a seat, or drag to draw a rectangle and fill it with seats. Press Escape or click again to exit.', 'info');
+                seatMap.style.cursor = 'crosshair';
+
+                // Handler for mousedown (start drag or single click)
+                addModeHandler = function(e) {
+                    if (!addMode) return;
+                    dragStart = { x: e.offsetX, y: e.offsetY };
+                    dragEnd = null;
+
+                    // Create outline div for rectangle
+                    if (!outlineDiv) {
+                        outlineDiv = document.createElement('div');
+                        outlineDiv.style.position = 'absolute';
+                        outlineDiv.style.pointerEvents = 'none';
+                        outlineDiv.style.border = '2px dashed #facc15';
+                        outlineDiv.style.background = 'rgba(253, 224, 71, 0.08)';
+                        outlineDiv.style.zIndex = 1000;
+                        seatMap.appendChild(outlineDiv);
+                    }
+                    outlineDiv.style.display = 'block';
+
+                    // Handler for mousemove (drag)
+                    dragHandler = function(ev) {
+                        dragEnd = { x: ev.offsetX, y: ev.offsetY };
+                        // Draw rectangle outline
+                        const x = Math.min(dragStart.x, dragEnd.x);
+                        const y = Math.min(dragStart.y, dragEnd.y);
+                        const w = Math.abs(dragEnd.x - dragStart.x);
+                        const h = Math.abs(dragEnd.y - dragStart.y);
+                        outlineDiv.style.left = x + 'px';
+                        outlineDiv.style.top = y + 'px';
+                        outlineDiv.style.width = w + 'px';
+                        outlineDiv.style.height = h + 'px';
+                    };
+
+                    // Handler for mouseup (finish drag or click)
+                    upHandler = function(ev) {
+                        seatMap.removeEventListener('mousedown', addModeHandler);
+                        document.removeEventListener('mousemove', dragHandler);
+                        document.removeEventListener('mouseup', upHandler);
+
+                        let seatsToAdd = [];
+                        if (dragEnd && (Math.abs(dragEnd.x - dragStart.x) > 10 || Math.abs(dragEnd.y - dragStart.y) > 10)) {
+                            // Drag: add seats in a grid inside the rectangle
+                            const x0 = Math.min(dragStart.x, dragEnd.x);
+                            const y0 = Math.min(dragStart.y, dragEnd.y);
+                            const x1 = Math.max(dragStart.x, dragEnd.x);
+                            const y1 = Math.max(dragStart.y, dragEnd.y);
+                            const seatSize = 60; // px
+                            const seatSpacing = 5; // px
+                            const totalW = x1 - x0;
+                            const totalH = y1 - y0;
+                            const cols = Math.max(1, Math.floor((totalW + seatSpacing) / (seatSize + seatSpacing)));
+                            const rows = Math.max(1, Math.floor((totalH + seatSpacing) / (seatSize + seatSpacing)));
+                            for (let row = 0; row < rows; row++) {
+                                for (let col = 0; col < cols; col++) {
+                                    const x = x0 + col * (seatSize + seatSpacing);
+                                    const y = y0 + row * (seatSize + seatSpacing);
+                                    if (x + seatSize <= x1 + 1 && y + seatSize <= y1 + 1) {
+                                        seatsToAdd.push({ x, y });
+                                    }
+                                }
+                            }
+                        } else {
+                            // Single click: add one seat
+                            seatsToAdd.push({ x: dragStart.x, y: dragStart.y });
+                        }
+                        if (outlineDiv && outlineDiv.parentNode) outlineDiv.parentNode.removeChild(outlineDiv);
+                        outlineDiv = null;
+                        seatsToAdd.forEach(pos => {
+                            const seatNumber = currentSeats.length + 1;
+                            const newSeat = {
+                                id: `temp-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+                                name: `Seat ${seatNumber}`,
+                                x: pos.x,
+                                y: pos.y,
+                                available: true
+                            };
+                            currentSeats.push(newSeat);
+                        });
+                        renderSeats();
+                        updateStatus(`Added ${seatsToAdd.length} seat(s). Continue adding or press Escape/click button to exit.`, 'success');
+                        // Re-enable add mode for next click/drag
+                        if (addMode) seatMap.addEventListener('mousedown', addModeHandler);
+                    };
+
+                    document.addEventListener('mousemove', dragHandler);
+                    document.addEventListener('mouseup', upHandler);
                 };
 
-                currentSeats.push(newSeat);
-                renderSeats();
-                updateStatus(`Added new seat: ${newSeat.name}. Drag to position it.`);
+                seatMap.addEventListener('mousedown', addModeHandler);
+                document.addEventListener('keydown', escHandler);
             });
 
             removeSeatBtn.addEventListener('click', function() {
