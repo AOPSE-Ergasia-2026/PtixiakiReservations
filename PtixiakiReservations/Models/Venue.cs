@@ -13,6 +13,8 @@ public class Venue
     [ForeignKey("CityId")] public City City { get; set; }
     public string PostalCode { get; set; }
     public string Phone { get; set; }
+    public string? VenueUrl { get; set; }
+    public string? SocialMediaUrl { get; set; }
     public string UserId { get; set; }
     [ForeignKey("UserId")] public ApplicationUser ApplicationUser { get; set; }
     public string imgUrl { get; set; }

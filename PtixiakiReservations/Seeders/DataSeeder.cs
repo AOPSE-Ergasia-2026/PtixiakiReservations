@@ -213,6 +213,8 @@ public class DataSeeder
                 City = city,
                 PostalCode = string.IsNullOrWhiteSpace(venueSeed.PostalCode) ? "00000" : venueSeed.PostalCode.Trim(),
                 Phone = CreateRandomPhone(random),
+                VenueUrl = "www.example.com",
+                SocialMediaUrl = "www.example.com",
                 UserId = venueOwner.Id,
                 imgUrl = $"/images/venues/venue{random.Next(1, 6)}.jpg"
             });

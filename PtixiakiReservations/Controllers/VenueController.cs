@@ -242,6 +242,8 @@ namespace PtixiakiReservations.Controllers
                     CityId = model.CityId,
                     PostalCode = model.PostalCode,
                     Phone = model.Phone,
+                    VenueUrl = model.VenueUrl,
+                    SocialMediaUrl = model.SocialMediaUrl,
                     UserId = userId,
                     imgUrl = uniqueFileName
                 };
