@@ -433,6 +433,13 @@
     </div>
 </div>
 
+<style>
+    .highlight {
+        font-weight: 600;
+        color: #3b82f6;
+    }
+</style>
+
 @section Scripts {
         <script>
         // =========================
@@ -440,6 +447,15 @@
         // =========================
         document.getElementById('searchInput').addEventListener('input', function () {
             filterReservations();
+            const query = this.value.trim();
+
+            clearHighlights();
+
+            if (!query) return;
+
+            document.querySelectorAll("#reservationTableBody td:nth-child(1), td:nth-child(2), td:nth-child(3), td:nth-child(4)").forEach(td => {
+                highlightNode(td, query);
+            });
         });
 
         // =========================
@@ -448,6 +464,42 @@
         document.getElementById('filterSelect').addEventListener('change', function () {
             filterReservations();
         });
+
+        function highlightNode(node, query) {
+            if (!query) return;
+
+            const regex = new RegExp(`(${query})`, "gi");
+
+            const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+
+            const textNodes = [];
+            while (walker.nextNode()) {
+                textNodes.push(walker.currentNode);
+            }
+
+            textNodes.forEach(textNode => {
+                const parent = textNode.parentNode;
+
+                if (!textNode.nodeValue.trim()) return;
+
+                const replaced = textNode.nodeValue.replace(regex, '<span class="highlight">$1</span>');
+
+                if (replaced !== textNode.nodeValue) {
+                    const span = document.createElement("span");
+                    span.innerHTML = replaced;
+                    parent.replaceChild(span, textNode);
+                }
+            });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll("span.highlight").forEach(mark => {
+                const parent = mark.parentNode;
+                parent.replaceChild(document.createTextNode(mark.textContent), mark);
+                parent.normalize();
+            });
+        }
+
 
         function filterReservations() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();

@@ -220,6 +220,7 @@ public class EventsController(
         var eventsQuery = context.Event
             .Include(e => e.Venue)
             .ThenInclude(v => v.City)
+            .Include(e => e.EventType) 
             .Where(e => e.ParentEventId == null); 
 
         if (!string.IsNullOrWhiteSpace(city))
@@ -956,7 +957,7 @@ private async Task ReloadCreateDropdowns(string userId)
     [AllowAnonymous]
     public async Task<IActionResult> GetAutocompleteResults(string query)
     {
-        if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 1)
         {
             return Json(new List<object>());
         }
@@ -1286,9 +1287,24 @@ private async Task ReloadCreateDropdowns(string userId)
     [HttpGet]
     public async Task<IActionResult> SearchVenues(string query)
     {
+        if (string.IsNullOrWhiteSpace(query))
+            return Json(new List<object>());
+
+        query = query.ToLower();
+
         var venues = await context.Venue
-            .Where(v => v.Name.ToLower().Contains(query.ToLower()))
-            .Select(v => new { id = v.Id, name = v.Name, city = v.City != null ? v.City.Name : "N/A" })
+            .Where(v =>
+                v.Name.ToLower().Contains(query) ||
+                (v.City != null && v.City.Name.ToLower().Contains(query))
+            )
+            .OrderByDescending(v => v.Name.ToLower().Contains(query))
+            .ThenBy(v => v.Name)
+            .Select(v => new
+            {
+                id = v.Id,
+                name = v.Name,
+                city = v.City != null ? v.City.Name : "N/A"
+            })
             .Take(10)
             .ToListAsync();
 
