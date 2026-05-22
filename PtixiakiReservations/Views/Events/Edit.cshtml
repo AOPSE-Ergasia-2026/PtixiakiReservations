@@ -153,7 +153,7 @@
                             </div>
                         </div>
 
-                        <!-- Venue and Sub Area Section -->
+                        <!-- Venue and Layout Section -->
                         <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                             <div class="flex items-center mb-4">
                                 <div class="h-10 w-10 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600">
@@ -188,9 +188,9 @@
                                     <span asp-validation-for="VenueId" class="text-red-500 text-xs mt-1"></span>
                                 </div>
 
-                                <!-- Sub Area Selection -->
+                                <!-- Layout Selection -->
                                 <div>
-                                    <label asp-for="SubAreaId" class="block text-sm font-medium text-gray-700 mb-1">Sub Area (Optional)</label>
+                                    <label asp-for="SubAreaId" class="block text-sm font-medium text-gray-700 mb-1">Layout</label>
                                     <div class="relative">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -199,7 +199,7 @@
                                         </div>
                                         <select asp-for="SubAreaId" asp-items="ViewBag.SubAreaList" id="SubAreaId"
                                                 class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none bg-white">
-                                            <option value="">Select a sub area (optional)</option>
+                                            <option value="">Select a Layout</option>
                                         </select>
                                         <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -289,24 +289,24 @@
                 venueSearch.value = '';
                 venueSearch.disabled = false;
                 clearVenueBtn.classList.add('hidden');
-                subAreaSelect.innerHTML = '<option value="">Select a sub area (optional)</option>';
+                subAreaSelect.innerHTML = '<option value="">Select a Layout</option>';
                 venueSearch.focus();
             };
 
-            // --- 3. Sub-Area Fetching Logic ---
+            // --- 3. Layout Fetching Logic ---
             function fetchSubAreas(venueId, preselectId = null) {
                 if (!venueId) {
-                    subAreaSelect.innerHTML = '<option value="">Select a sub area (optional)</option>';
+                    subAreaSelect.innerHTML = '<option value="">Select a Layout</option>';
                     return;
                 }
                 
                 subAreaSelect.disabled = true;
-                subAreaSelect.innerHTML = '<option value="">Loading sub areas...</option>';
+                subAreaSelect.innerHTML = '<option value="">Loading Layouts...</option>';
                 
                 fetch(`/Events/GetSubAreas?venueId=${venueId}`)
                     .then(response => response.json())
                     .then(data => {
-                        subAreaSelect.innerHTML = '<option value="">Select a sub area (optional)</option>';
+                        subAreaSelect.innerHTML = '<option value="">Select a Layouts</option>';
                         data.forEach(subArea => {
                             const option = document.createElement('option');
                             option.value = subArea.id;
@@ -323,7 +323,7 @@
                     })
                     .catch(error => {
                         console.error('Error fetching sub areas:', error);
-                        subAreaSelect.innerHTML = '<option value="">Error loading sub areas</option>';
+                        subAreaSelect.innerHTML = '<option value="">Error loading Layouts</option>';
                         subAreaSelect.disabled = false;
                     });
             }

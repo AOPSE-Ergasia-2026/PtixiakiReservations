@@ -149,9 +149,9 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label asp-for="SubAreaId" class="block text-sm font-medium text-gray-700 mb-1">Sub Area</label>
+                                        <label asp-for="SubAreaId" class="block text-sm font-medium text-gray-700 mb-1">Layout</label>
                                         <select asp-for="SubAreaId" id="subAreaSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white disabled:bg-gray-100" required>
-                                            <option value="">Select a sub area</option>
+                                            <option value="">Select a Layout</option>
                                         </select>
                                     </div>
                                 </div>
@@ -277,6 +277,7 @@
             const allScheduleInputs = [startInput, endInput, multiStartDate, multiEndDate, multiStartTime, multiDailyEndTime];
 
             const eventPreviewList = document.getElementById('eventPreviewList');
+            const cont = document.getElementById('datePreviewContainer');
 
             window.showChildEventForm = function() {
                 eventDetailsWrapper.classList.remove('hidden');
@@ -457,7 +458,7 @@
                     venueSearch.value = "";
                     clearVenueBtn.classList.add('hidden');
                     subAreaSelect.disabled = true;
-                    subAreaSelect.innerHTML = '<option value="">Select a sub area</option>';
+                    subAreaSelect.innerHTML = '<option value="">Select a layout</option>';
                     allScheduleInputs.forEach(i => i.disabled = true);
                 }
                 isMultiDay.disabled = false;
@@ -508,7 +509,7 @@
                 venueSearch.value = '';
                 venueSearch.disabled = false;
                 clearVenueBtn.classList.add('hidden');
-                subAreaSelect.innerHTML = '<option value="">Select a sub area</option>';
+                subAreaSelect.innerHTML = '<option value="">Select a Layout</option>';
             };
 
             function fetchSubAreas(vId) {
@@ -516,7 +517,7 @@
                 fetch(`/Events/GetSubAreas?venueId=${vId}`)
                     .then(res => res.json())
                     .then(data => {
-                        subAreaSelect.innerHTML = '<option value="">Select a sub area</option>';
+                        subAreaSelect.innerHTML = '<option value="">Select a Layout</option>';
                         data.forEach(s => {
                             const opt = document.createElement('option');
                             opt.value = s.id; opt.textContent = s.areaName;
@@ -594,7 +595,7 @@
             }
 
             function renderPreviewTable() {
-                const cont = document.getElementById('datePreviewContainer');
+                
                 eventPreviewList.innerHTML = '';
                 
                 previewDates.forEach((date, index) => {
@@ -657,7 +658,7 @@
                 }
 
                 if (!subAreaSelect.value) {
-                    alert("Please select a Sub Area.");
+                    alert("Please select a Layout.");
                     subAreaSelect.focus();
                     return;
                 }
@@ -711,6 +712,9 @@
                     const dateRows = document.querySelectorAll('#eventPreviewList tr');
                     const finalDates = Array.from(dateRows).map(row => row.getAttribute('data-date'));
                     formData.append("SpecificDatesJson", JSON.stringify(finalDates));
+                    resetDateConstraints();
+                    eventPreviewList.innerHTML='';
+                    cont.classList.add('hidden');
                 }
                 const submitBtn = form.querySelector('button[type="submit"]');
                 const originalBtnText = submitBtn.innerHTML;
@@ -753,7 +757,7 @@
                         venueSearch.value = '';
                         venueSearch.disabled = false;
                         clearVenueBtn.classList.add('hidden');
-                        subAreaSelect.innerHTML = '<option value="">Select a sub area</option>';
+                        subAreaSelect.innerHTML = '<option value="">Select a Layout</option>';
                         
                         if (wasMasterEvent) {
                             alertText.textContent = "Master Event created! You can now quickly add Sub-Events for it.";
@@ -835,6 +839,11 @@
                             subAreaSelect.disabled = false;
                             fetchSubAreas(currentVenueId);
                             updateSubEventsList(currentParentId);
+                            resetDateConstraints();
+                            eventPreviewList.innerHTML='';
+                            multiDayContainer.classList.add("hidden");
+                            singleDayContainer.classList.remove("hidden");
+
                         }
                         
                         setTimeout(() => {
