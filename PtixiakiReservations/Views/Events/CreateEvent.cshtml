@@ -75,13 +75,19 @@
                                 <div>
                                     <h3 class="text-indigo-800 font-bold text-sm">Sub-Events Created (<span id="subEventCountDisplay">0</span>)</h3>
                                     <p class="text-[10px] text-indigo-600">Instances tied to this Master Event</p>
+                                    <label for="MutliRenameCheckbox">Rename Multiple:</label>
+                                    <input type="checkbox" id="MultiRenameCheckbox" onchange="showRenameCheckboxes()"/>
+                                    <button type="button" onclick="showRenameModal()" id="ConfirmMultiRenameBtn"
+                                        class="hidden bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs transition-colors shadow-sm">
+                                        Confirm
+                                    </button>
                                 </div>
 
-                                <button type="button" onclick="showChildEventForm()" class="p-1.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 shadow-sm transition-transform hover:scale-110" title="Add another sub-event">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v6h4a1 1 0 110 2h-4v6a1 1 0 11-2 0v-6H4a1 1 0 110-2h4V4a1 1 0 011-1z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
+                                    <button type="button" onclick="showChildEventForm()" class="p-1.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 shadow-sm transition-transform hover:scale-110" title="Add another sub-event">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v6h4a1 1 0 110 2h-4v6a1 1 0 11-2 0v-6H4a1 1 0 110-2h4V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
                             </div>
                             <div class="max-h-48 overflow-y-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
@@ -209,6 +215,25 @@
     </div>
 </div>
 
+<div id="renameModal" tabindex="-1" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md relative transform transition-all">
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Choose a Name</h3>
+        <input type="text" id="ModalField" placeholder="New Name..." />
+
+        <!-- Modal Action Buttons -->
+        <div class="flex justify-end gap-3 mt-4">
+            <button type="button" onclick="closeRenameModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm">
+                Cancel
+            </button>
+            <button type="button" onclick="RenameMultiple(document.getElementById('ModalField').value)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                Rename
+            </button>
+        </div>
+        
+    </div>
+</div>
+    
+
 <div id="successMessage" class="hidden mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-sm">
     <div class="flex items-center">
         <div class="flex-shrink-0">
@@ -237,6 +262,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             // --- Elements ---
+            let namingIds = [];
             let previewDates = [];
             const form = document.getElementById('createEventForm');
             const modeRadios = document.getElementsByName('eventMode');
@@ -891,8 +917,28 @@
                     row.className = 'hover:bg-gray-50 transition-colors';
                     
                     row.innerHTML = `
-                        <td class="px-6 py-3 whitespace-nowrap">
-                            <div class="font-bold text-gray-900">${ev.name}</div>
+                        <td class="namingData px-6 py-3 whitespace-nowrap flex items-center space-x-2">
+                            <label class="hidden SubIdLabels">${ev.id}</label>
+                            <input type="checkbox" class="h-5 w-5 hidden renameCheckboxes"/>
+                            <input type="text" id="edit-input-${ev.id}" 
+                                value="${ev.name}" 
+                                data-original-value="${ev.name}" 
+                                onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveEditName(${ev.id}); }"
+                                onfocus="showEditButtons(${ev.id})"
+                                class="renameField font-bold text-gray-900 border border-transparent hover:border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full max-w-[200px] transition-colors">
+                            
+                            <button type="button" 
+                                    id="save-btn-${ev.id}" 
+                                    onclick="saveEditName(${ev.id})"
+                                    class="hidden bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs transition-colors shadow-sm">
+                                Save
+                            </button>
+                            <button type="button" 
+                                    id="cancel-btn-${ev.id}" 
+                                    onclick="cancelEditName(${ev.id})"
+                                    class="hidden text-gray-500 hover:text-gray-700 px-2 py-1 text-xs transition-colors">
+                                Cancel
+                            </button>
                         </td>
                         <td class="px-6 py-3 whitespace-nowrap">
                             <div class="font-medium text-gray-700">${ev.date}</div>
@@ -918,6 +964,149 @@
             } catch (e) { 
                 console.error("Error updating list", e); 
             }
+        }
+
+        function showRenameCheckboxes(){
+            const checkboxes = document.querySelectorAll('.renameCheckboxes');
+            const renameFields = document.querySelectorAll('.renameField');
+            const SubIdLabels = document.querySelectorAll('.SubIdLabels');
+            const MultiRenameCheckbox = document.getElementById('MultiRenameCheckbox');
+            const ConfirmMultiRenameBtn = document.getElementById('ConfirmMultiRenameBtn');
+
+            if(MultiRenameCheckbox.checked){
+                ConfirmMultiRenameBtn.classList.remove('hidden');
+                SubIdLabels.forEach(label => {
+                    cancelEditName(label.textContent);
+                });
+                checkboxes.forEach(checkbox => {
+                    checkbox.classList.remove('hidden');
+                });
+                renameFields.forEach(field => {
+                    field.disabled=true;
+
+                });
+
+            } else {
+                ConfirmMultiRenameBtn.classList.add('hidden');
+                checkboxes.forEach(checkbox => {
+                    checkbox.classList.add('hidden');
+                });
+                renameFields.forEach(field => {
+                        field.disabled=false;
+                });
+            }
+        }
+
+        // Open the modal
+        function showRenameModal() {
+            const modal = document.getElementById("renameModal");
+            modal.classList.remove('hidden');
+            
+            document.body.classList.add('overflow-hidden');
+        }
+
+        // Close the modal
+        function closeRenameModal() {
+            namingIds = [];
+            const modal = document.getElementById("renameModal");
+            modal.classList.add('hidden');
+            
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        async function RenameMultiple(NewName){
+            const Name = NewName.trim();
+
+            if (!Name) {
+                alert("Name cannot be empty.");
+                return;
+            }
+
+            closeRenameModal();
+
+            const namingData = document.querySelectorAll('.namingData');
+            namingData.forEach(data => {
+                if (data.children[1].checked){
+                    namingIds.push(data.children[0].textContent);
+                }
+            });
+
+            if (namingIds.length === 0) {
+                alert("Please select at least one event to rename.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("NewName", Name);
+            
+            namingIds.forEach(id => {
+                formData.append("ids", id); 
+            });
+
+            try {
+                const res = await fetch('/Events/MultiSubRename', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    updateSubEventsList(document.getElementById('ParentEventId').value);
+
+                    document.getElementById('MultiRenameCheckbox').checked = false;
+                    showRenameCheckboxes(); 
+
+                    document.getElementById('ModalField').value = '';
+                } else {
+                    alert("Failed to rename events.");
+                }
+            } catch (e) { 
+                console.error("Error with bulk rename", e); 
+            }
+        }
+
+        function showEditButtons(id) {
+            document.getElementById(`save-btn-${id}`).classList.remove('hidden');
+            document.getElementById(`cancel-btn-${id}`).classList.remove('hidden');
+            }
+
+        async function saveEditName(id) {
+            const inputField = document.getElementById(`edit-input-${id}`);
+            const newName = inputField.value.trim();
+
+            if (!newName) {
+                alert("Name cannot be empty.");
+                return;
+            }
+
+            if (!confirm("Are you sure you want to rename this specific sub-event?")) {
+                cancelEditName(id); 
+                return;
+            }
+
+            try {
+                const res = await fetch(`/Events/EditSubSelectedName?id=${id}&NewName=${encodeURIComponent(newName)}`, {
+                    method: 'POST'
+                });
+                
+                if (res.ok) {
+                    inputField.setAttribute('data-original-value', newName);
+                    document.getElementById(`save-btn-${id}`).classList.add('hidden');
+                    document.getElementById(`cancel-btn-${id}`).classList.add('hidden');
+                    inputField.blur();
+                } else {
+                    alert("Failed to rename the event.");
+                }
+            } catch (e) { 
+                console.error("Error renaming", e); 
+            }
+        }
+
+        function cancelEditName(id) {
+            const inputField = document.getElementById(`edit-input-${id}`);           
+            inputField.value = inputField.getAttribute('data-original-value');
+            document.getElementById(`save-btn-${id}`).classList.add('hidden');
+            document.getElementById(`cancel-btn-${id}`).classList.add('hidden');
+            inputField.blur();
         }
 
         async function deleteSubEvent(id) {

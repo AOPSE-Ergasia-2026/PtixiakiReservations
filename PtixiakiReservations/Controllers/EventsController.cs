@@ -1100,6 +1100,9 @@ private async Task ReloadCreateDropdowns(string userId)
         return View(eventToEdit);
     }
 
+   
+    
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin")]
@@ -1212,6 +1215,34 @@ private async Task ReloadCreateDropdowns(string userId)
 
         return View(updatedEvent);
     }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> EditSubSelectedName(int id, string NewName)
+    {
+        try
+            {
+                var originalEvent = await context.Event.FindAsync(id);
+                if (originalEvent == null)
+                {
+                    return NotFound();
+                }
+                originalEvent.Name = NewName;
+
+                await context.SaveChangesAsync();
+            
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error updating event {EventId}", id);
+                return NotFound();
+            }
+            return Json(new { 
+                success = true, 
+                message = "Your event was renamed successfully!" 
+            });
+    }
+
     [Authorize] 
     [HttpGet]
     public async Task<IActionResult> SearchParentEvents(string query)
@@ -1416,5 +1447,33 @@ private async Task ReloadCreateDropdowns(string userId)
 
         if (ev == null) return NotFound();
         return Json(ev);
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> MultiSubRename([FromForm] List<int> ids, [FromForm] string NewName)
+    {
+        try
+        {
+            var eventsToRename = await context.Event
+                .Where(e => ids.Contains(e.Id))
+                .ToListAsync();
+            var count = 1;
+            foreach (var ev in eventsToRename)
+            {
+                ev.Name = NewName+" ("+count+")";
+                count++;
+            }
+
+            await context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Events renamed successfully!" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error bulk renaming events");
+            return BadRequest(new { success = false, message = "Error renaming events." });
+        }
+        
     }
 }
