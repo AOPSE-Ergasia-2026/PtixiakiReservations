@@ -201,7 +201,7 @@
 
                                <!-- Duplicate Button -->
                                 <button type="button"
-                                        onclick="openDuplicateModal(@subArea.Id)"
+                                        onclick="openDuplicateModal(@subArea.Id, '@subArea.AreaName')"
                                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm transition-colors">
 
                                     Duplicate
@@ -252,8 +252,10 @@
 
         <!-- Title -->
         <h2 class="text-xl font-semibold text-gray-800">
-            Please select a name for the layout that you like to dublicate
+            Please type a name for the layout that you like to dublicate
         </h2>
+        <br>
+        <br>
 
         <!-- Input -->
         <div class="mt-4">
@@ -284,7 +286,7 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const createSubAreaBtn = document.getElementById('createSubAreaBtn');
     const createSubAreaBtnEmpty = document.getElementById('createSubAreaBtnEmpty');
     const createSubAreaModal = document.getElementById('createSubAreaModal');
@@ -292,22 +294,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelBtn = document.getElementById('cancelBtn');
     const createSubAreaForm = document.getElementById('createSubAreaForm');
 
-    // Show modal
     function showModal() {
         createSubAreaModal.classList.remove('hidden');
     }
 
-    // Hide modal
     function hideModal() {
         createSubAreaModal.classList.add('hidden');
         createSubAreaForm.reset();
     }
 
-    // Event listeners
     if (createSubAreaBtn) {
         createSubAreaBtn.addEventListener('click', showModal);
     }
-    
+
     if (createSubAreaBtnEmpty) {
         createSubAreaBtnEmpty.addEventListener('click', showModal);
     }
@@ -320,16 +319,15 @@ document.addEventListener('DOMContentLoaded', function() {
         cancelBtn.addEventListener('click', hideModal);
     }
 
-    // Handle form submission
     if (createSubAreaForm) {
-        createSubAreaForm.addEventListener('submit', async function(e) {
+        createSubAreaForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const formData = new FormData(createSubAreaForm);
             const layoutCount = parseInt(formData.get('layoutCount')) || 1;
 
-            // Build an array of layout objects
             const subAreaData = [];
+
             for (let i = 0; i < layoutCount; i++) {
                 subAreaData.push({
                     AreaName: formData.get('areaName'),
@@ -348,13 +346,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        'RequestVerificationToken':
+                            document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
                     },
                     body: JSON.stringify(subAreaData)
                 });
 
                 if (response.ok) {
-                    // Success - reload the page to show the new sub area
                     location.reload();
                 } else {
                     const errorText = await response.text();
@@ -368,59 +366,58 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-    let selectedSubAreaId = 0;
+let selectedSubAreaId = 0;
+let selectedSubAreaName = '';
 
-    function openDuplicateModal(subAreaId) {
-        selectedSubAreaId = subAreaId;
+function openDuplicateModal(subAreaId, subAreaName) {
+    selectedSubAreaId = subAreaId;
+    selectedSubAreaName = subAreaName;
 
-        document.getElementById('duplicateModal').classList.remove('hidden');
-        document.getElementById('duplicateModal').classList.add('flex');
-    }
+    document.getElementById('duplicateModal').classList.remove('hidden');
+    document.getElementById('duplicateModal').classList.add('flex');
 
-    function closeDuplicateModal() {
-        document.getElementById('duplicateModal').classList.add('hidden');
-        document.getElementById('duplicateModal').classList.remove('flex');
+    document.getElementById('duplicateName').value = '';
+}
 
-        document.getElementById('duplicateName').value = '';
-    }
+function closeDuplicateModal() {
+    document.getElementById('duplicateModal').classList.add('hidden');
+    document.getElementById('duplicateModal').classList.remove('flex');
 
-    async function confirmDuplicate() {
+    document.getElementById('duplicateName').value = '';
+}
 
-        const layoutName = document.getElementById('duplicateName').value;
+async function confirmDuplicate() {
 
-        if (!layoutName.trim()) {
-            alert('Please enter a name');
-            return;
+    const inputName =
+        document.getElementById('duplicateName').value.trim();
+
+    const layoutName =
+        inputName || `Copy of ${selectedSubAreaName}`;
+
+    try {
+
+        const response = await fetch('/SubAreas/Duplicate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: selectedSubAreaId,
+                name: layoutName
+            })
+        });
+
+        if (response.ok) {
+            closeDuplicateModal();
+            location.reload();
+        }
+        else {
+            alert('Duplicate failed');
         }
 
-        try {
-
-            const response = await fetch('/SubAreas/Duplicate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    id: selectedSubAreaId,
-                    name: layoutName
-                })
-            });
-
-            if (response.ok) {
-
-                closeDuplicateModal();
-
-                // refresh page
-                location.reload();
-            }
-            else {
-                alert('Duplicate failed');
-            }
-
-        }
-        catch (error) {
-            console.error(error);
-            alert('Something went wrong');
-        }
+    } catch (error) {
+        console.error(error);
+        alert('Something went wrong');
     }
+}
 </script>

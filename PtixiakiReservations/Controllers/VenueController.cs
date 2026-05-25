@@ -114,6 +114,7 @@ namespace PtixiakiReservations.Controllers
             var venue = await _context.Venue
                 .Include(v => v.City)
                 .Include(v => v.ApplicationUser)
+                .Include(v => v.VenueCategory)
                 .FirstOrDefaultAsync(v => v.Id == id);
 
             if (venue == null)
@@ -127,20 +128,26 @@ namespace PtixiakiReservations.Controllers
                 return Forbid();
             }
 
-            ViewBag.SelectedCity = venue.City.Name;
+            var selectedEventTypeIds = venue.VenueCategory?
+                .Where(vc => vc.CategoryId.HasValue)
+                .Select(vc => vc.CategoryId.Value)
+                .ToList() ?? new List<int>();
 
             VenueViewModel viewModel = new VenueViewModel
             {
-                Id = venue.Id,  // Add Id to the view model
+                Id = venue.Id,
                 Name = venue.Name,
                 Address = venue.Address,
                 PostalCode = venue.PostalCode,
                 CityId = venue.CityId,
                 Phone = venue.Phone,
-                UserId = venue.UserId
+                VenueUrl = venue.VenueUrl,
+                SocialMediaUrl = venue.SocialMediaUrl,
+                UserId = venue.UserId,
+                SelectedEventTypeIds = selectedEventTypeIds
             };
 
-            ViewBag.ListOfCity = _context.City.ToList();
+            PopulateVenueFormLists(venue.CityId, selectedEventTypeIds);
 
             return View(viewModel);
         }
@@ -150,13 +157,30 @@ namespace PtixiakiReservations.Controllers
         [Authorize(Roles = "Admin,Venue,SuperOrganizer")]
         public async Task<IActionResult> Edit(VenueViewModel model)
         {
-            Venue venue =
-                _context.Venue.SingleOrDefault(v => v.ApplicationUser.Id == _userManager.GetUserId(HttpContext.User));
-            if (model == null || venue == null)
+            if (model == null)
             {
                 ViewBag.Error = string.Format("You dont have a Venue yet or something went wrong on your edit");
                 return View("Error");
             }
+
+            var venue = await _context.Venue
+                .Include(v => v.VenueCategory)
+                .FirstOrDefaultAsync(v => v.Id == model.Id);
+
+            if (venue == null)
+            {
+                return NotFound();
+            }
+
+            if (!User.IsInRole("Admin") && _userManager.GetUserId(HttpContext.User) != venue.UserId)
+            {
+                return Forbid();
+            }
+
+            var selectedEventTypeIds = model.SelectedEventTypeIds?
+                .Distinct()
+                .ToList() ?? new List<int>();
+
             if (ModelState.IsValid)
             {
                 string uniqueFileName = null;
@@ -164,7 +188,7 @@ namespace PtixiakiReservations.Controllers
                 {
                     if (model.Photo == null)
                     {
-                        uniqueFileName = _context.Venue.SingleOrDefault(s => s.Id == venue.Id).imgUrl;
+                        uniqueFileName = venue.imgUrl;
                     }
                     else
                     {
@@ -177,13 +201,38 @@ namespace PtixiakiReservations.Controllers
                     venue.Name = model.Name;
                     venue.Phone = model.Phone;
                     venue.PostalCode = model.PostalCode;
+                    venue.VenueUrl = model.VenueUrl;
+                    venue.SocialMediaUrl = model.SocialMediaUrl;
                     if (uniqueFileName != null)
                     {
                         venue.imgUrl = uniqueFileName;
                     }
-                    var t = model.CityId;
                     venue.CityId = model.CityId;
                     venue.Address = model.Address;
+
+                    if (venue.VenueCategory != null && venue.VenueCategory.Any())
+                    {
+                        _context.VenueCategory.RemoveRange(venue.VenueCategory);
+                    }
+
+                    if (selectedEventTypeIds.Any())
+                    {
+                        var categoriesToAttach = selectedEventTypeIds.Select(typeId => new VenueCategory
+                        {
+                            VenueId = venue.Id,
+                            CategoryId = typeId
+                        }).ToList();
+
+                        _context.VenueCategory.AddRange(categoriesToAttach);
+                    }
+                    else
+                    {
+                        _context.VenueCategory.Add(new VenueCategory
+                        {
+                            VenueId = venue.Id,
+                            CategoryId = null
+                        });
+                    }
 
                     _context.Update(venue);
                     await _context.SaveChangesAsync();
@@ -199,6 +248,11 @@ namespace PtixiakiReservations.Controllers
                         throw;
                     }
                 }
+            }
+            else
+            {
+                PopulateVenueFormLists(model.CityId, selectedEventTypeIds);
+                return View(model);
             }
             return RedirectToAction("details", new { id = venue.Id });
         }
@@ -352,6 +406,16 @@ namespace PtixiakiReservations.Controllers
         private bool VenueExists(int id)
         {
             return _context.Venue.Any(e => e.Id == id);
+        }
+
+        private void PopulateVenueFormLists(int selectedCityId, IEnumerable<int> selectedEventTypeIds = null)
+        {
+            ViewBag.ListOfCity = new SelectList(_context.City.ToList(), "Id", "Name", selectedCityId);
+            ViewBag.EventTypes = new MultiSelectList(
+                _context.EventType.ToList(),
+                "Id",
+                "Name",
+                selectedEventTypeIds ?? Enumerable.Empty<int>());
         }
     
         private string GetImagePath(string imageUrl)

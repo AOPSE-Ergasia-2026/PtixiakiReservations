@@ -203,13 +203,47 @@
             const selectCategories = document.getElementById('CategoriesSelect');
             const categoryCheckBox = document.getElementById('categoryCheckBox');
 
-            categoryCheckBox.addEventListener('change', function() {
-                selectCategories.disabled = categoryCheckBox.checked;
-                if(categoryCheckBox.checked){
-                    selectCategories.selectedIndex = -1
+            function categoryOptions() {
+                return Array.from(selectCategories.options);
+            }
+
+            function setAllCategories(checked) {
+                categoryCheckBox.checked = checked;
+                selectCategories.disabled = checked;
+
+                if (checked) {
+                    categoryOptions().forEach(option => option.selected = false);
                 }
-                
+            }
+
+            function updateAllCategoriesState() {
+                const options = categoryOptions();
+                const allSelected = options.length > 0 && options.every(option => option.selected);
+
+                if (allSelected) {
+                    setAllCategories(true);
+                } else {
+                    categoryCheckBox.checked = false;
+                }
+            }
+
+            categoryCheckBox.addEventListener('change', function() {
+                setAllCategories(categoryCheckBox.checked);
             });
+
+            selectCategories.addEventListener('mousedown', function(event) {
+                if (selectCategories.disabled || event.target.tagName !== 'OPTION') {
+                    return;
+                }
+
+                event.preventDefault();
+                event.target.selected = !event.target.selected;
+                selectCategories.focus();
+                updateAllCategoriesState();
+            });
+
+            selectCategories.addEventListener('change', updateAllCategoriesState);
+            setAllCategories(categoryCheckBox.checked);
 
             fileInput.addEventListener('change', (event) => {
                 const file = event.target.files[0];

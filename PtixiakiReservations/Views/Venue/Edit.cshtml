@@ -2,13 +2,15 @@
 
 @{
     ViewData["Title"] = "Edit";
+    var allCategoriesChecked = Model.SelectedEventTypeIds?.Any() != true;
 }
 
 <div class="container mx-auto p-6">
     <div class="bg-white p-6 shadow-lg rounded-md">
         <h4 class="text-xl font-semibold text-gray-700 mb-4">Venue Details</h4>
-        <form asp-action="Edit" enctype="multipart/form-data" class="space-y-6">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" class="space-y-6">
             <div asp-validation-summary="ModelOnly" class="text-red-500"></div>
+            <input asp-for="Id" type="hidden"/>
 
             <!-- Name Field -->
             <div>
@@ -26,14 +28,37 @@
                 <span asp-validation-for="Address" class="text-red-500 text-sm"></span>
             </div>
 
+            <!-- Venue Category Field -->
+            <div>
+                <div class="flex items-center gap-5 mb-2">
+                    <label for="CategoriesSelect" class="block text-sm font-medium text-gray-700">
+                        Supported Event Types
+                    </label>
+                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700" for="categoryCheckBox">
+                        <input type="checkbox"
+                               class="size-4"
+                               id="categoryCheckBox"
+                               @(allCategoriesChecked ? "checked" : "")>
+                        All Categories?
+                    </label>
+                </div>
+                <select asp-for="SelectedEventTypeIds"
+                        asp-items="ViewBag.EventTypes"
+                        multiple="multiple"
+                        id="CategoriesSelect"
+                        class="block w-full px-3 py-2 border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base text-gray-700 rounded-sm bg-gray-50 h-32">
+                </select>
+                <span asp-validation-for="SelectedEventTypeIds" class="text-red-500 text-sm"></span>
+            </div>
+
             <!-- City Field -->
             <div>
-                <label asp-for="City" class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label asp-for="CityId" class="block text-sm font-medium text-gray-700 mb-1">City</label>
                 <select asp-for="CityId"
-                        asp-items="@(new SelectList(@ViewBag.ListOfCity, "Id", "Name", ViewBag.SelectedCity))"
+                        asp-items="ViewBag.ListOfCity"
                         class="block w-full px-3 py-2 border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base text-gray-700 rounded-sm bg-gray-50">
                 </select>
-                <span asp-validation-for="City" class="text-red-500 text-sm"></span>
+                <span asp-validation-for="CityId" class="text-red-500 text-sm"></span>
             </div>
 
             <!-- Postal Code Field -->
@@ -52,9 +77,25 @@
                 <span asp-validation-for="Phone" class="text-red-500 text-sm"></span>
             </div>
 
+            <!-- Venue URL Field -->
+            <div>
+                <label asp-for="VenueUrl" class="block text-sm font-medium text-gray-700 mb-1">Venue URL</label>
+                <input asp-for="VenueUrl"
+                       class="block w-full px-3 py-2 border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base text-gray-700 rounded-sm bg-gray-50"/>
+                <span asp-validation-for="VenueUrl" class="text-red-500 text-sm"></span>
+            </div>
+
+            <!-- Social Media URL Field -->
+            <div>
+                <label asp-for="SocialMediaUrl" class="block text-sm font-medium text-gray-700 mb-1">Social Media URL</label>
+                <input asp-for="SocialMediaUrl"
+                       class="block w-full px-3 py-2 border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base text-gray-700 rounded-sm bg-gray-50"/>
+                <span asp-validation-for="SocialMediaUrl" class="text-red-500 text-sm"></span>
+            </div>
+
             <!-- Photo Upload -->
             <div>
-                <label for="Photo" class="block text-sm font-medium text-gray-700 mb-1">Photo Upload</label>
+                <label for="file_input" class="block text-sm font-medium text-gray-700 mb-1">Photo Upload</label>
                 <div class="mt-1 flex items-center">
                     <input asp-for="Photo"
                            class="block w-full text-sm text-gray-900 border border-gray-300 rounded-sm cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-500"
@@ -91,6 +132,56 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const fileInput = document.querySelector('#file_input');
+            const categoryCheckBox = document.getElementById("categoryCheckBox");
+            const selectCategories = document.getElementById("CategoriesSelect");
+
+            function categoryOptions() {
+                return Array.from(selectCategories.options);
+            }
+
+            function setAllCategories(checked) {
+                categoryCheckBox.checked = checked;
+                selectCategories.disabled = checked;
+
+                if (checked) {
+                    categoryOptions().forEach(option => option.selected = false);
+                }
+            }
+
+            function updateAllCategoriesState() {
+                const options = categoryOptions();
+                const allSelected = options.length > 0 && options.every(option => option.selected);
+
+                if (allSelected) {
+                    setAllCategories(true);
+                } else {
+                    categoryCheckBox.checked = false;
+                }
+            }
+
+            categoryCheckBox.addEventListener("change", function () {
+                setAllCategories(categoryCheckBox.checked);
+            });
+
+            selectCategories.addEventListener("mousedown", function (event) {
+                if (selectCategories.disabled || event.target.tagName !== "OPTION") {
+                    return;
+                }
+
+                event.preventDefault();
+                event.target.selected = !event.target.selected;
+                selectCategories.focus();
+                updateAllCategoriesState();
+            });
+
+            selectCategories.addEventListener("change", updateAllCategoriesState);
+
+            if (categoryCheckBox.checked) {
+                setAllCategories(true);
+            } else {
+                updateAllCategoriesState();
+            }
+
             fileInput.addEventListener("change", function () {
                 const fileName = this.value.split("\\").pop();
                 this.nextElementSibling.innerText = fileName;
