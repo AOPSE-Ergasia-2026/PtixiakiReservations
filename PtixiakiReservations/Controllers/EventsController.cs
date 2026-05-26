@@ -1117,7 +1117,7 @@ private async Task ReloadCreateDropdowns(string userId)
         ViewBag.EventTypeList =
             new SelectList(await context.EventType.ToListAsync(), "Id", "Name", eventToEdit.EventTypeId);
 
-        // Get sub areas for the selected venue
+        // Get layouts for the selected venue
         var subAreas = await context.SubArea
             .Where(sa => sa.VenueId == eventToEdit.VenueId)
             .Select(sa => new SelectListItem
@@ -1235,7 +1235,7 @@ private async Task ReloadCreateDropdowns(string userId)
 
         ViewBag.EventTypeList = new SelectList(await context.EventType.ToListAsync(), "Id", "Name");
 
-        // Get sub areas for the selected venue
+        // Get layouts for the selected venue
         ViewBag.SubAreaList = await context.SubArea
             .Where(sa => sa.VenueId == updatedEvent.VenueId)
             .Select(sa => new SelectListItem

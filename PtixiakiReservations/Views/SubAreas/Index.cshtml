@@ -2,10 +2,10 @@
 @using System.Linq
 
 @{
-    ViewData["Title"] = "Sub Areas";
+    ViewData["Title"] = "Layouts";
     var subAreas = ViewBag.SubAreas as System.Collections.Generic.List<dynamic>;
 
-    // Manual counting of sub areas with seats
+    // Manual counting of layouts with seats
     int subAreasWithSeats = 0;
     if (subAreas != null)
     {

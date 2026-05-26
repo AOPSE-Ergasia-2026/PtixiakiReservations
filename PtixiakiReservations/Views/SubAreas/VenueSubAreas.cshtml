@@ -4,7 +4,7 @@
 @inject SignInManager<ApplicationUser> SignInManager
 
 @{
-    ViewData["Title"] = "Venue Sub Areas";
+    ViewData["Title"] = "Venue Layouts";
     var currentUser = await UserManager.GetUserAsync(User);
     var userRoles = await UserManager.GetRolesAsync(currentUser);
     bool canCreateSubAreas = User.IsInRole("Venue") || User.IsInRole("SuperOrganizer") || User.IsInRole("Admin");
@@ -48,7 +48,7 @@
             </div>
         </div>
 
-        <!-- Create Sub Area Modal/Form (initially hidden) -->
+        <!-- Create Layout Modal/Form (initially hidden) -->
         @if (canCreateSubAreas && userOwnsVenue)
         {
             <div id="createSubAreaModal" class="hidden bg-white rounded-xl shadow-lg p-8 mb-8">
@@ -160,7 +160,7 @@
                         <div class="h-2 bg-gradient-to-r from-purple-400 to-indigo-500"></div>
 
                         <div class="p-6">
-                            <!-- Sub area name with icon -->
+                            <!-- Layout name with icon -->
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 bg-indigo-100 rounded-md p-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -170,7 +170,7 @@
                                 <h3 class="ml-3 text-xl font-semibold text-gray-800">@subArea.AreaName</h3>
                             </div>
 
-                            <!-- Sub area dimensions -->
+                            <!-- Layout dimensions -->
                             <div class="mt-4 grid grid-cols-2 gap-4">
                                 <div class="bg-gray-50 rounded-md px-3 py-2">
                                     <span class="text-xs font-medium text-gray-500">Width</span>
@@ -356,11 +356,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     location.reload();
                 } else {
                     const errorText = await response.text();
-                    alert('Error creating sub area: ' + errorText);
+                    alert('Error creating layout: ' + errorText);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error creating sub area. Please try again.');
+                alert('Error creating layout. Please try again.');
             }
         });
     }
