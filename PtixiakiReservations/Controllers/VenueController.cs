@@ -148,6 +148,7 @@ namespace PtixiakiReservations.Controllers
             };
 
             PopulateVenueFormLists(venue.CityId, selectedEventTypeIds);
+            ViewBag.ImagePath = GetImagePath(venue.imgUrl);
 
             return View(viewModel);
         }
@@ -252,8 +253,10 @@ namespace PtixiakiReservations.Controllers
             else
             {
                 PopulateVenueFormLists(model.CityId, selectedEventTypeIds);
+                ViewBag.ImagePath = GetImagePath(venue.imgUrl);
                 return View(model);
             }
+            TempData["SuccessMessage"] = "Venue updated successfully";
             return RedirectToAction("details", new { id = venue.Id });
         }
 
