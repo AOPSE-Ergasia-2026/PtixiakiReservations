@@ -13,11 +13,40 @@
         </div>
 
         <div id="panel-body" class="p-6">
-            <div class="grid grid-cols-2 gap-6 mb-6 w-full justify-between">
-                <div class="flex justify-center w-full flex-col">
-                    <h1 class="text-2xl font-bold text-blue-700 mb-5">Get Started with your next Experiences</h1>
-                    <!-- Search Term with Autocomplete -->
-                    <div class="mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Event Type Dropdown -->
+                <div>
+                    <label for="event-type" class="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
+                    <div class="relative">
+                        <select id="event-type" class="w-full appearance-none bg-white border border-gray-300 rounded-lg py-3 px-4 pr-8 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                            <option value="">All Event Types</option>
+                            <!-- Will be populated via AJAX -->
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Range Picker -->
+                <div class="md:col-span-2">
+                    <label for="date-range" class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                    <div class="relative">
+                        <input type="text" id="date-range" placeholder="Select date range"
+                               class="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <button id="reset-date" type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Term with Autocomplete -->
+            <div class="mb-6">
                         <label for="search-term" class="block text-sm font-medium text-gray-700 mb-2">Event Name or Venue or Location</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -29,63 +58,20 @@
                                 class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                 autocomplete="off">
                         </div>
-                        <!-- Autocomplete Dropdown Container (Positioned relative to viewport) -->
                         <div id="autocomplete-dropdown" class="absolute left-0 top-full z-50 bg-white shadow-xl rounded-md border border-gray-200 hidden max-h-60 overflow-y-auto w-96"></div>
                     </div>
-                    <button id="moreBtn" type="button" class="text-blue-600 mb-4 text-left hover:text-blue-800 transition-colors">
-                        More
-                    </button>
-                    <!-- Event Type Dropdown -->
-                    <div id="EventTypeDropdown" class="mb-3 hidden">
-                        <label for="event-type" class="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
-                        <div class="relative">
-                            <select id="event-type" class="w-full appearance-none bg-white border border-gray-300 rounded-lg py-3 px-4 pr-8 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                                <option value="">All Event Types</option>
-                                <!-- Will be populated via AJAX -->
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Date Range Picker -->
-                    <div class="md:col-span-2 hidden" id="DateRangePicker">
-                        <label for="date-range" class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-                        <div class="relative">
-                            <input type="text" id="date-range" placeholder="Select date range"
-                                class="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                            <button id="reset-date" type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex items-center w-full">
-                    <!-- Recent Event Carousel -->
-                    <div id="carousel-container" class="relative w-full max-w-lg mx-auto h-64 overflow-hidden rounded-xl shadow-lg">
-                    </div>
-                </div>
-                    
-            </div>
-
-           
-
-            <div class="flex justify-between items-center w-full">
+            <div class="flex justify-between items-center">
+                <p id="search-validation-message" class="text-red-500 text-sm hidden">Please fill at least one field to search</p>
                 <button id="search-button"
                         class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                     <span class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        Search For Results
+                        Search Events
                     </span>
                 </button>
-                <p id="search-validation-message" class="text-red-500 text-sm hidden">*Please fill at least one field to search</p>
             </div>
         </div>
     </div>
@@ -538,74 +524,6 @@
                     });
             }
 
-            async function populateCarousel() {
-                try {
-                    const response = await fetch('/Events/getNewestEvents');
-                    const events = await response.json();
-                    const container = document.getElementById('carousel-container');
-
-                    if (events.length === 0) {
-                        container.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-gray-500">No events found</div>';
-                        return;
-                    }
-
-                    container.innerHTML = ''; 
-
-                    events.forEach((event, index) => {
-                        const visibilityClass = index === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none';
-
-                        const dateObj = new Date(event.startDateTime);
-                        const formattedDate = dateObj.toLocaleDateString();
-
-                        const slide = document.createElement('a');
-                        slide.href = `/Events/Details/${event.id}`;
-                        slide.className = `carousel-slide absolute inset-0 transition-opacity duration-1000 ease-in-out ${visibilityClass} bg-cover bg-center flex flex-col justify-end p-6 cursor-pointer`;
-                        
-                        if (event.imagePath) {
-                            slide.style.backgroundImage = `url('${event.imagePath}')`;
-                        } else {
-                            slide.classList.add('bg-gray-800'); // Fallback color if no image
-                        }
-                        
-                        slide.innerHTML = `
-                            <div class="absolute inset-0 bg-black bg-opacity-40"></div>
-                            <div class="relative z-10 text-white">
-                                <h3 class="text-3xl font-bold">${event.name}</h3>
-                                <div class="flex gap-4 text-sm mt-2 opacity-90">
-                                    <span>${event.venue?.city?.name || 'Unknown City'}</span>
-                                    <span>${formattedDate}</span>
-                                    <span>${event.eventType?.name || 'Unknown Type'}</span>
-                                </div>
-                            </div>
-                        `;
-                        
-                        container.appendChild(slide);
-                    });
-
-                    startCarouselLogic();
-
-                } catch (err) {
-                    console.error("Carousel fetch error:", err);
-                }
-            }
-
-            function startCarouselLogic() {
-                const slides = document.querySelectorAll('.carousel-slide');
-                if (slides.length <= 1) return; 
-
-                let currentIndex = 0;
-                setInterval(() => {
-                    slides[currentIndex].classList.remove('opacity-100');
-                    slides[currentIndex].classList.add('opacity-0', 'pointer-events-none');
-
-                    currentIndex = (currentIndex + 1) % slides.length;
-
-                    slides[currentIndex].classList.remove('opacity-0', 'pointer-events-none');
-                    slides[currentIndex].classList.add('opacity-100');
-                }, 4000);
-            }
-
-            populateCarousel();
 
             // Fetch autocomplete results
             function fetchAutocompleteResults(query) {
@@ -1111,38 +1029,5 @@
             btn.textContent = btn.textContent === "X" ? "V" : "X";
         });
 
-        const moreBtn = document.getElementById("moreBtn")
-        
-        moreBtn.addEventListener("click", function () {
-            const EventTypeDropdown = document.getElementById("EventTypeDropdown");
-            EventTypeDropdown.classList.toggle("hidden");
-            const DateRangePicker = document.getElementById("DateRangePicker");
-            DateRangePicker.classList.toggle("hidden");
-
-            let isHidden;
-            if (EventTypeDropdown.classList.contains("hidden") && DateRangePicker.classList.contains("hidden")) {
-                isHidden = true;
-            }else{
-                isHidden = false;
-            }
-            moreBtn.textContent = isHidden ? "More" : "Less";
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {
-            const slides = document.querySelectorAll('.carousel-slide');
-            let currentIndex = 0;
-
-            function showNextSlide() {
-                slides[currentIndex].classList.remove('opacity-100');
-                slides[currentIndex].classList.add('opacity-0');
-
-                currentIndex = (currentIndex + 1) % slides.length;
-
-                slides[currentIndex].classList.remove('opacity-0');
-                slides[currentIndex].classList.add('opacity-100');
-            }
-
-            setInterval(showNextSlide, 4000);
-        });
     </script>
 }

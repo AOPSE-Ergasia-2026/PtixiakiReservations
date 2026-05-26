@@ -198,18 +198,18 @@ if (!builder.Environment.IsEnvironment("EF"))
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // CHANGED: Set the default root route to point directly to EventsForToday
+    // CHANGED: Set the default root route to point directly to HomePage
     app.MapControllerRoute(
         name: "default",
-        pattern: "{controller=Events}/{action=EventsForToday}/{id?}");
+        pattern: "{controller=Events}/{action=HomePage}/{id?}");
     app.MapRazorPages();
 
-    // Add a redirect from the root to EventsForToday
+    // Add a redirect from the root to HomePage
     app.Use(async (context, next) =>
     {
         if (context.Request.Path == "/")
         {
-            context.Response.Redirect("/Events/EventsForToday");
+            context.Response.Redirect("/Events/HomePage");
             return;
         }
 

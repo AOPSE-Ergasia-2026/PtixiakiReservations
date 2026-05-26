@@ -215,7 +215,7 @@ public class EventsController(
     }
 
    [AllowAnonymous]
-    public async Task<IActionResult> EventsForToday(string city, int page = 1, int pageSize = 12)
+    public async Task<IActionResult> EventsForToday(int? category, string city, string searchTerm, int page = 1, int pageSize = 12)
     {
         var today = DateTime.Today;
         var eventsQuery = context.Event
@@ -224,9 +224,25 @@ public class EventsController(
             .Include(e => e.EventType) 
             .Where(e => e.ParentEventId == null); 
 
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLower();
+            eventsQuery = eventsQuery.Where(e => 
+                e.Name.ToLower().Contains(term) || 
+                (e.Venue != null && e.Venue.Name.ToLower().Contains(term)) || 
+                (e.Venue != null && e.Venue.City != null && e.Venue.City.Name.ToLower().Contains(term))
+            );
+            ViewBag.SearchTerm = searchTerm; 
+        }
+
         if (!string.IsNullOrWhiteSpace(city))
         {
             eventsQuery = eventsQuery.Where(e => e.Venue.City.Name.ToLower() == city.ToLower());
+        }
+
+        if (category.HasValue && category.Value > 0)
+        {
+            eventsQuery = eventsQuery.Where(e => e.EventTypeId == category.Value);
         }
 
         eventsQuery = eventsQuery.OrderBy(e => e.StartDateTime);
@@ -1502,6 +1518,45 @@ private async Task ReloadCreateDropdowns(string userId)
                 .ThenInclude(v => v.City)
             .Include(e => e.EventType) 
             .Where(e => e.ParentEventId == null)
+            .Take(5)
+            .ToListAsync();
+            
+        if (ev == null) return NotFound();
+        return Json(ev);
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> HomePage()
+    {
+        return View();
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> GetCategories()
+    {
+        var categories = await context.EventType
+            .Select(c => new {
+                id = c.Id,
+                name = c.Name, 
+            })
+            .ToListAsync();
+
+        return Json(categories);
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> getRecentEvents()
+    {
+        var ev = await context.Event
+            .OrderBy(e => e.StartDateTime)
+            .Include(e => e.Venue)
+                .ThenInclude(v => v.City)
+            .Include(e => e.EventType) 
+            .Where(e => e.ParentEventId == null)
+            .Where(e => e.EndTime > DateTime.Now)
             .Take(5)
             .ToListAsync();
             

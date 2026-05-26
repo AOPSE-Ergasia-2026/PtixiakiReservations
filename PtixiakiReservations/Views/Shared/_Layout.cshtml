@@ -56,8 +56,17 @@
 
                         }
 
-                        <!-- Home link - visible to all users -->
+                        <!-- Search link - visible to all users -->
                         <a href="@Url.Action("EventsForToday", "Events")"
+                           class="inline-flex items-center justify-center h-8 w-8 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </a>
+
+                        <!-- Home link - visible to all users -->
+
+                        <a href="@Url.Action("HomePage", "Events")"
                            class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                             Home
                         </a>
@@ -183,10 +192,17 @@
                     var mobileUserRoles = mobileCurrentUser != null ? await UserManager.GetRolesAsync(mobileCurrentUser) : new List<string>();
                     var isMobileVenueManager = mobileUserRoles.Contains("Venue");
                     var isMobileAdmin = mobileUserRoles.Contains("Admin");
+                    var isMobileSuper = mobileUserRoles.Contains("SuperOrganizer");
+                    var isMobileEventManager = mobileUserRoles.Contains("Event");
                 }
 
-                <!-- Home link - visible to all users -->
                 <a href="@Url.Action("EventsForToday", "Events")"
+                    class="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
+                     Search...
+                </a>
+
+                <!-- Home link - visible to all users -->
+                <a href="@Url.Action("HomePage", "Events")"
                    class="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Home</a>
                 @*
                 <!-- Reservations link - visible to all logged-in users -->
@@ -197,10 +213,13 @@
                 }
                 *@
                 <!-- Venue manager links - only visible to venue managers -->
-                @if (isMobileVenueManager || isMobileAdmin)
+                @if (isMobileEventManager|| isMobileAdmin || isMobileSuper)
                 {
                     <a href="@Url.Action("CreateEvent", "Events")"
                        class="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">Create Event</a>
+                }
+                @if (isMobileVenueManager|| isMobileAdmin || isMobileSuper)
+                {
 
                     <a href="@Url.Action("Index", "Venue")"
                        class="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">View Venues</a>
