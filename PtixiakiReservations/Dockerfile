@@ -2,11 +2,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY *.csproj ./
-RUN dotnet restore
+# Copy csproj
+COPY PtixiakiReservations/PtixiakiReservations.csproj ./PtixiakiReservations/
 
+# Restore
+RUN dotnet restore ./PtixiakiReservations/PtixiakiReservations.csproj
+
+# Copy everything
 COPY . .
-RUN dotnet publish -c Release -o /app/publish
+
+# Publish
+RUN dotnet publish ./PtixiakiReservations/PtixiakiReservations.csproj -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
