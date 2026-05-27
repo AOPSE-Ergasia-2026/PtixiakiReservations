@@ -48,12 +48,14 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run Tests (if test project exists)
-        if: ${{ exists('PtixiakiReservations/PtixiakiReservations.Tests') }}
-        working-directory: ./PtixiakiReservations/PtixiakiReservations.Tests
-        run: dotnet test --configuration Release --logger:"trx;LogFileName=test-results.trx"
-
-      # Αφαιρέθηκε το test-reporter γιατί δεν υπάρχουν .trx αρχεία
-      # Αν προσθέσεις tests, το ξαναβάζουμε
+        run: |
+          if [ -d "./PtixiakiReservations/PtixiakiReservations.Tests" ]; then
+            echo "Test project found. Running tests..."
+            cd ./PtixiakiReservations/PtixiakiReservations.Tests
+            dotnet test --configuration Release --logger:"trx;LogFileName=test-results.trx"
+          else
+            echo "No test project found. Skipping tests."
+          fi
 
   code-analysis:
     name: Code Analysis
