@@ -21,7 +21,8 @@ jobs:
     - name: Build and Push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./PtixiakiReservations
+        file: ./PtixiakiReservations/Dockerfile
         push: true
         tags: xristoskap/ptixiaki-reservations:latest
 
