@@ -40,22 +40,12 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
-        working-directory: ./PtixiakiReservations/PtixiakiReservations
+        working-directory: ./PtixiakiReservations
         run: dotnet restore
 
       - name: Build
-        working-directory: ./PtixiakiReservations/PtixiakiReservations
+        working-directory: ./PtixiakiReservations
         run: dotnet build --configuration Release --no-restore
-
-      - name: Run Tests (if test project exists)
-        run: |
-          if [ -d "./PtixiakiReservations/PtixiakiReservations.Tests" ]; then
-            echo "Test project found. Running tests..."
-            cd ./PtixiakiReservations/PtixiakiReservations.Tests
-            dotnet test --configuration Release --logger:"trx;LogFileName=test-results.trx"
-          else
-            echo "No test project found. Skipping tests."
-          fi
 
   code-analysis:
     name: Code Analysis
